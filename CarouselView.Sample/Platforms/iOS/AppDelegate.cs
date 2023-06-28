@@ -1,5 +1,4 @@
-﻿using CarouselView.iOS;
-using Foundation;
+﻿using Foundation;
 
 namespace CarouselView.Sample
 {

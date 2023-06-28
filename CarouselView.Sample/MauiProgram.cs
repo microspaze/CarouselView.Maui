@@ -1,6 +1,4 @@
-﻿using CarouselView.Abstractions;
-using Microsoft.Extensions.Logging;
-using Microsoft.Maui.Controls.Compatibility.Hosting;
+﻿using Microsoft.Extensions.Logging;
 
 namespace CarouselView.Sample
 {
