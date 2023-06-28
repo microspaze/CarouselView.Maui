@@ -10,6 +10,11 @@
 		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">21.0</SupportedOSPlatformVersion>
 		<RootNamespace>CarouselView</RootNamespace>
 		<Nullable>enable</Nullable>
+		<Title>CarouselView.Maui</Title>
+		<Description>CarouselView controls for .NET MAUI</Description>
+		<PackageProjectUrl>https://github.com/microspaze/CarouselView.Maui</PackageProjectUrl>
+		<RepositoryUrl>https://github.com/microspaze/CarouselView.Maui</RepositoryUrl>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
 	</PropertyGroup>
 	
 	<ItemGroup>
@@ -17,5 +22,12 @@
 		<MauiImage Include="Resources\Images\*.svg" />
 		<MauiImage Include="Resources\Images\*.jpg" />
 		<MauiImage Include="Resources\Images\*.png" />
+	</ItemGroup>
+	
+	<ItemGroup>
+	  <None Include="..\README.md">
+	    <Pack>True</Pack>
+	    <PackagePath>\</PackagePath>
+	  </None>
 	</ItemGroup>
 </Project>
