@@ -1,0 +1,33 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.6.33723.286
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CarouselView.Maui", "CarouselView.Maui\CarouselView.Maui.csproj", "{566933BB-A1BC-4D2F-B4FE-D6684E12AA14}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CarouselView.Sample", "CarouselView.Sample\CarouselView.Sample.csproj", "{B838F15E-98D2-424A-893B-8B1160C28D46}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{566933BB-A1BC-4D2F-B4FE-D6684E12AA14}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{566933BB-A1BC-4D2F-B4FE-D6684E12AA14}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{566933BB-A1BC-4D2F-B4FE-D6684E12AA14}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{566933BB-A1BC-4D2F-B4FE-D6684E12AA14}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B838F15E-98D2-424A-893B-8B1160C28D46}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B838F15E-98D2-424A-893B-8B1160C28D46}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B838F15E-98D2-424A-893B-8B1160C28D46}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
+		{B838F15E-98D2-424A-893B-8B1160C28D46}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B838F15E-98D2-424A-893B-8B1160C28D46}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B838F15E-98D2-424A-893B-8B1160C28D46}.Release|Any CPU.Deploy.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {03A5214D-7312-47DA-8F45-C6DCD7BD40EA}
+	EndGlobalSection
+EndGlobal

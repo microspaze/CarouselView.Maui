@@ -1,0 +1,60 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:cv="clr-namespace:CarouselView.Abstractions;assembly=CarouselView.Maui"
+             x:Class="CarouselView.Sample.MainPage">
+    
+        <StackLayout
+            HorizontalOptions="Fill"
+            Spacing="25"
+            Padding="0,0"
+            VerticalOptions="Fill">
+            
+            <cv:CarouselViewControl x:Name="CarouselHorizontal"
+                                    HeightRequest="300"
+                                    ItemsSource="{Binding MyItemsSource}"
+                                    ShowArrows="False"
+                                    ShowIndicators="True"
+                                    PositionSelectedCommand="{Binding PositionSelectedCommand}"
+                                    ScrolledCommand="{Binding ScrolledCommand}"
+                                    Orientation="Horizontal"
+                                    InfiniteScrolling="True"
+                                    AutoplayInterval="0"
+                                    IsSwipeEnabled="True"
+                                    SelectedItem="{Binding SelectedItem}">
+                <cv:CarouselViewControl.ItemTemplate>
+                    <DataTemplate>
+                        <Image Source="{Binding .}" Aspect="Fill"/>
+                    </DataTemplate>
+                </cv:CarouselViewControl.ItemTemplate>
+            </cv:CarouselViewControl>
+
+            <Button Margin="0, 5"
+                x:Name="CounterBtn"
+                Text="Click me"
+                SemanticProperties.Hint="Counts the number of times you click"
+                Clicked="OnCounterClicked"
+                HorizontalOptions="Center" />
+                
+            <cv:CarouselViewControl x:Name="CarouselVertical"
+                                    HeightRequest="300"
+                                    ItemsSource="{Binding MyItemsSource}"
+                                    ShowArrows="False"
+                                    ShowIndicators="True"
+                                    PositionSelectedCommand="{Binding PositionSelectedCommand}"
+                                    ScrolledCommand="{Binding ScrolledCommand}"
+                                    Orientation="Vertical"
+                                    InfiniteScrolling="True"
+                                    AutoplayInterval="0"
+                                    IsSwipeEnabled="True"
+                                    SelectedItem="{Binding SelectedItem}">
+                <cv:CarouselViewControl.ItemTemplate>
+                    <DataTemplate>
+                        <Image Source="{Binding .}" Aspect="Fill"/>
+                    </DataTemplate>
+                </cv:CarouselViewControl.ItemTemplate>
+            </cv:CarouselViewControl>
+
+        </StackLayout>
+
+</ContentPage>
