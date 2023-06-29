@@ -51,3 +51,10 @@ You can find all descriptions from the original repository
 ## License
 The MIT License (MIT) see [License file](LICENSE)
 
+
+## Release Notes
+1.0.1
+1.Fix Android CarouselView's content not showing when app's first startup bug.
+
+1.0.0
+1.Init package for Android and iOS platforms.
