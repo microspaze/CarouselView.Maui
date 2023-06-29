@@ -105,6 +105,7 @@ namespace CarouselView.Droid
                 if (Element == null) return;
 
                 Element.SizeChanged -= Element_SizeChanged;
+                Element.Loaded -= OnElementLoaded;
                 if (Element.ItemsSource != null && Element.ItemsSource is INotifyCollectionChanged)
                 {
                     ((INotifyCollectionChanged)Element.ItemsSource).CollectionChanged -= ItemsSource_CollectionChanged;
@@ -121,9 +122,10 @@ namespace CarouselView.Droid
                 }
             }
 
-            if (e.NewElement != null)
+            if (e.NewElement != null && Element != null)
             {
                 Element.SizeChanged += Element_SizeChanged;
+                Element.Loaded += OnElementLoaded;
 
                 // Configure the control and subscribe to event handlers
                 if (Element.ItemsSource != null && Element.ItemsSource is INotifyCollectionChanged)
@@ -140,6 +142,13 @@ namespace CarouselView.Droid
                     keyboardService.VisibilityChanged += KeyboardService_VisibilityChanged;
                 }
             }
+        }
+
+        private async void OnElementLoaded(object? sender, EventArgs e)
+        {
+            //[Android] Fix CarouselView's content not showing when app's first startup bug
+            await Task.Delay(10);
+            UpdateCurrentPage();
         }
 
         private void AddAutoplayBehavior()
@@ -436,7 +445,7 @@ namespace CarouselView.Droid
                     if (!isChangingPosition)
                     {
                         // NEW
-                        SetCurrentPage(Element.InfiniteScrolling && Element.ItemsSource.GetCount() > 1 ? Element.Position + 1 : Element.Position);
+                        UpdateCurrentPage();
                     }
                     break;
                 case "SelectedItem":
@@ -1092,6 +1101,11 @@ namespace CarouselView.Droid
 
                 ResetAdapter(); 
             }
+        }
+
+        void UpdateCurrentPage()
+        {
+            SetCurrentPage(Element.InfiniteScrolling && Element.ItemsSource.GetCount() > 1 ? Element.Position + 1 : Element.Position);
         }
 
         void SetCurrentPage(int position)
