@@ -22,6 +22,15 @@
 		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">11.0</SupportedOSPlatformVersion>
 		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">21.0</SupportedOSPlatformVersion>
 		<AssemblyName>CarouselView.Sample</AssemblyName>
+		<Configurations>Debug;Release</Configurations>
+		<Platforms>Device;Simulator;AnyCPU</Platforms>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="$(TargetFramework.Contains('-ios'))">
+		<!--DEBUG ON DEVICE-->
+		<RuntimeIdentifier Condition="$(Platform.Contains('Device'))">ios-arm64</RuntimeIdentifier>
+		<!--DEBUG ON SIMULATOR-->
+		<RuntimeIdentifier Condition="$(Platform.Contains('Simulator'))">iossimulator-x64</RuntimeIdentifier>
 	</PropertyGroup>
 
 	<ItemGroup>

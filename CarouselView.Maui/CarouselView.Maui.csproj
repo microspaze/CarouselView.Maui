@@ -16,6 +16,8 @@
 		<RepositoryUrl>https://github.com/microspaze/CarouselView.Maui</RepositoryUrl>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<Version>1.0.1</Version>
+		<Configurations>Debug;Release</Configurations>
+		<Platforms>AnyCPU;Device;Simulator</Platforms>
 	</PropertyGroup>
 	
 	<ItemGroup>
