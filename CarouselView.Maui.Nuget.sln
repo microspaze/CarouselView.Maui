@@ -8,7 +8,10 @@ EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
+		Debug|Device = Debug|Device
+		Debug|Simulator = Debug|Simulator
 		Release|Any CPU = Release|Any CPU
+		Release|Device = Release|Device
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{B838F15E-98D2-424A-893B-8B1160C28D46}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
@@ -17,6 +20,12 @@ Global
 		{B838F15E-98D2-424A-893B-8B1160C28D46}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B838F15E-98D2-424A-893B-8B1160C28D46}.Release|Any CPU.Build.0 = Release|Any CPU
 		{B838F15E-98D2-424A-893B-8B1160C28D46}.Release|Any CPU.Deploy.0 = Release|Any CPU
+		{B838F15E-98D2-424A-893B-8B1160C28D46}.Release|Device.ActiveCfg = Release|Device
+		{B838F15E-98D2-424A-893B-8B1160C28D46}.Release|Device.Build.0 = Release|Device
+		{B838F15E-98D2-424A-893B-8B1160C28D46}.Debug|Device.ActiveCfg = Debug|Device
+		{B838F15E-98D2-424A-893B-8B1160C28D46}.Debug|Device.Build.0 = Debug|Device
+		{B838F15E-98D2-424A-893B-8B1160C28D46}.Debug|Simulator.ActiveCfg = Debug|Simulator
+		{B838F15E-98D2-424A-893B-8B1160C28D46}.Debug|Simulator.Build.0 = Debug|Simulator
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
