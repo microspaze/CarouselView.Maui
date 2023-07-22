@@ -13,7 +13,7 @@
             Padding="0,0"
             VerticalOptions="Fill">
             
-            <cv:CarouselViewControl x:Name="CarouselHorizontal"
+            <cv:CarouselViewControl x:Name="CarouselVertical"
                                     HeightRequest="300"
                                     ItemsSource="{Binding MyItemsSource}"
                                     ShowArrows="False"
@@ -39,7 +39,7 @@
                 Clicked="OnCounterClicked"
                 HorizontalOptions="Center" />
                 
-            <cv:CarouselViewControl x:Name="CarouselVertical"
+            <cv:CarouselViewControl x:Name="CarouselHorizontal"
                                     VerticalOptions="FillAndExpand"
                                     ItemsSource="{Binding MyItemsSource}"
                                     ShowArrows="False"

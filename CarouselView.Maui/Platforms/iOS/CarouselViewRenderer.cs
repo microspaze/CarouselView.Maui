@@ -59,6 +59,18 @@ namespace CarouselView.iOS
         bool isChangingPosition;
         bool isChangingSelectedItem;
 
+        public override void LayoutSubviews()
+        {
+            base.LayoutSubviews();
+            
+            //Reset safeAreaInsets to UIEdgeInsets.Zero
+            var safeAreaInsets = pageController.View.SafeAreaInsets;
+            if (safeAreaInsets != UIEdgeInsets.Zero)
+            {
+                pageController.AdditionalSafeAreaInsets = new UIEdgeInsets(-safeAreaInsets.Top, -safeAreaInsets.Left, -safeAreaInsets.Bottom, -safeAreaInsets.Right);
+            }
+        }
+
         protected override void OnElementChanged(ElementChangedEventArgs<CarouselViewControl> e)
         {
             base.OnElementChanged(e);
@@ -419,7 +431,6 @@ namespace CarouselView.iOS
                 // InterPageSpacing BP
                 pageController = new UIPageViewController(UIPageViewControllerTransitionStyle.Scroll,
                                                           orientation, UIPageViewControllerSpineLocation.None, interPageSpacing);
-
                 pageController.View.ClipsToBounds = true;
             }
 
