@@ -53,6 +53,10 @@ The MIT License (MIT) see [License file](LICENSE)
 
 
 ## Release Notes
+## 1.0.2
+
+1.Fix iOS CarouselView's content can not be fullscreen issue.
+
 ## 1.0.1
 
 1.Fix Android CarouselView's content not showing when app's first startup bug.
