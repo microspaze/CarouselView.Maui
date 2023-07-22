@@ -2,11 +2,14 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:cv="clr-namespace:CarouselView.Abstractions;assembly=CarouselView.Maui"
+             xmlns:ios="clr-namespace:Microsoft.Maui.Controls.PlatformConfiguration.iOSSpecific;assembly=Microsoft.Maui.Controls"
+             ios:Page.UseSafeArea="False"
              x:Class="CarouselView.Sample.MainPage">
     
         <StackLayout
+            IgnoreSafeArea="True"
             HorizontalOptions="Fill"
-            Spacing="25"
+            Spacing="10"
             Padding="0,0"
             VerticalOptions="Fill">
             
@@ -17,7 +20,7 @@
                                     ShowIndicators="True"
                                     PositionSelectedCommand="{Binding PositionSelectedCommand}"
                                     ScrolledCommand="{Binding ScrolledCommand}"
-                                    Orientation="Horizontal"
+                                    Orientation="Vertical"
                                     InfiniteScrolling="True"
                                     AutoplayInterval="0"
                                     IsSwipeEnabled="True"
@@ -29,7 +32,7 @@
                 </cv:CarouselViewControl.ItemTemplate>
             </cv:CarouselViewControl>
 
-            <Button Margin="0, 5"
+            <Button
                 x:Name="CounterBtn"
                 Text="Click me"
                 SemanticProperties.Hint="Counts the number of times you click"
@@ -37,13 +40,13 @@
                 HorizontalOptions="Center" />
                 
             <cv:CarouselViewControl x:Name="CarouselVertical"
-                                    HeightRequest="300"
+                                    VerticalOptions="FillAndExpand"
                                     ItemsSource="{Binding MyItemsSource}"
                                     ShowArrows="False"
                                     ShowIndicators="True"
                                     PositionSelectedCommand="{Binding PositionSelectedCommand}"
                                     ScrolledCommand="{Binding ScrolledCommand}"
-                                    Orientation="Vertical"
+                                    Orientation="Horizontal"
                                     InfiniteScrolling="True"
                                     AutoplayInterval="0"
                                     IsSwipeEnabled="True"
