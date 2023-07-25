@@ -1232,6 +1232,7 @@ namespace CarouselView.Droid
 
                 // HeightRequest fix
                 formsView.Parent = this.Element;
+                this.Element.AddItemView(position, formsView);
 
                 // NEW: if infinite scrolling, reset view renderer
                 if (Element.InfiniteScrolling)

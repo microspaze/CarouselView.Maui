@@ -1221,10 +1221,7 @@ namespace CarouselView.iOS
             {
                 bindingContext = Source.Cast<object>().ElementAt(index);
             }
-
-            // Support for List<View> as ItemsSource
-            var view = bindingContext as View;
-
+            
             // Return from the local copy of controllers
             if (ChildViewControllers == null)
             {
@@ -1233,11 +1230,14 @@ namespace CarouselView.iOS
 
             foreach (ViewContainer controller in ChildViewControllers)
             {
-                if (controller.Tag == view)
+                if (controller.Tag == bindingContext)
                 {
                     return controller;
                 }
             }
+            
+            // Support for List<View> as ItemsSource
+            var view = bindingContext as View;
 
             // Support for List<DataTemplate> as ItemsSource
             var dt = bindingContext as DataTemplate;
@@ -1280,6 +1280,7 @@ namespace CarouselView.iOS
 
             // HeightRequest fix
             formsView.Parent = this.Element;
+            this.Element.AddItemView(index, formsView);
 
             var rect = new CGRect(Element.X, Element.Y, ElementWidth, ElementHeight);
             var nativeConverted = formsView.ToiOS(rect);

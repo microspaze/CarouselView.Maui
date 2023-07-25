@@ -8,7 +8,32 @@ namespace CarouselView.Abstractions
     /// CarouselView Interface
     /// </summary>
     public class CarouselViewControl : View
-	{
+    {
+        #region ItemViews
+
+        private readonly IList<View> _itemViews = new List<View>();
+        
+        public IList<View> ItemViews => _itemViews;
+
+        public void AddItemView(int index, View itemView)
+        {
+            if (_itemViews.Count <= index)
+            {
+                _itemViews.Add(itemView);
+            }
+            else
+            {
+                _itemViews[index] = itemView;
+            }
+        }
+
+        public View GetItemView(int index)
+        {
+            return _itemViews.Count > index ? _itemViews[index] : null;
+        }
+
+        #endregion
+        
         public static readonly BindableProperty OrientationProperty = BindableProperty.Create("Orientation", typeof(CarouselViewOrientation), typeof(CarouselViewControl), CarouselViewOrientation.Horizontal);
 
 		public CarouselViewOrientation Orientation

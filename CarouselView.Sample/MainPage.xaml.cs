@@ -20,6 +20,12 @@ namespace CarouselView.Sample
 
         private void OnCounterClicked(object sender, EventArgs e)
         {
+            var itemView = CarouselHorizontal.ItemViews[CarouselHorizontal.Position];
+            if (itemView is Image)
+            {
+                itemView.WidthRequest = 300;
+                itemView.HeightRequest = 300;
+            }
             count++;
 
             if (count == 1)
