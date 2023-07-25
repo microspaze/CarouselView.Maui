@@ -53,6 +53,10 @@ The MIT License (MIT) see [License file](LICENSE)
 
 
 ## Release Notes
+## 1.0.4
+
+1.Add ItemViews to CarouselViewControl, you can fetch children views of CarouselViewControl now.
+
 ## 1.0.2
 
 1.Fix iOS CarouselView's content can not be fullscreen issue.
