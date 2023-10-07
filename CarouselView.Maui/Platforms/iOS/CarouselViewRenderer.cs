@@ -280,7 +280,7 @@ namespace CarouselView.iOS
             {
                 case "Renderer":
                     // Fix for issues after recreating the control #86
-                    prevPosition = Element.Position;
+                    _prevPosition = Element.Position;
                     break;
                 case "IsVisible":
                     pageController.View.Hidden = !Element.IsVisible;
@@ -407,7 +407,7 @@ namespace CarouselView.iOS
                 isChangingPosition = true;
                 Element.Position = position;
                 isChangingPosition = false;
-                prevPosition = position;
+                _prevPosition = position;
                 SetArrowsVisibility();
                 SetIndicatorsCurrentPage();
                 SendPositionSelected();
@@ -676,7 +676,7 @@ namespace CarouselView.iOS
             {
                 Element.Position = 0;
             }
-            prevPosition = Element.Position;
+            _prevPosition = Element.Position;
             isChangingPosition = false;
         }
 
@@ -869,7 +869,7 @@ namespace CarouselView.iOS
             }
         }
 
-        bool prevBtnClicked;
+        private bool? _prevBtnClicked = null;
 
         void PrevBtn_TouchUpInside(object sender, EventArgs e)
         {
@@ -877,14 +877,14 @@ namespace CarouselView.iOS
 
             if (Element.Position > 0)
             {
-                prevBtnClicked = true;
+                _prevBtnClicked = true;
                 Element.Position--;
             }
             else if (Element.InfiniteScrolling)
             {
                 var position = Element.ItemsSource.GetCount() - 1;
                 var lastViewController = CreateViewController(position);
-                prevPosition = position;
+                _prevPosition = position;
 
                 pageController.SetViewControllers(new[] { lastViewController }, UIPageViewControllerNavigationDirection.Reverse, true, s =>
                 {
@@ -908,12 +908,13 @@ namespace CarouselView.iOS
 
             if (Element.Position < Element.ItemsSource?.GetCount() - 1)
             {
+                _prevBtnClicked = false;
                 Element.Position++;
             }
             else if (Element.InfiniteScrolling)
             {
                 var firstViewController = CreateViewController(0);
-                prevPosition = 0;
+                _prevPosition = 0;
 
                 pageController.SetViewControllers(new[] { firstViewController }, UIPageViewControllerNavigationDirection.Forward, true, s =>
                 {
@@ -1076,7 +1077,7 @@ namespace CarouselView.iOS
                         Element.Position++;
                         isChangingPosition = false;
 
-                        prevPosition = Element.Position;
+                        _prevPosition = Element.Position;
                     }
 
                     SetArrowsVisibility();
@@ -1165,28 +1166,25 @@ namespace CarouselView.iOS
                     }
                 }
 
-                prevPosition = Element.Position;
+                _prevPosition = Element.Position;
             }
         }
 
-        int prevPosition;
+        private int _prevPosition;
 
         void SetCurrentPage(int position)
         {
-            if (position < 0 || position > Element.ItemsSource?.GetCount() - 1) return;
-
-            if (Element == null || pageController == null || Element.ItemsSource == null) return;
+            if (Element == null || position < 0 || position > Element.ItemsSource?.GetCount() - 1) return;
 
             if (Element.ItemsSource?.GetCount() > 0)
             {
                 // Transition direction based on prevPosition or if prevBtn has been clicked
-                var navdirection = position >= prevPosition || !prevBtnClicked ? UIPageViewControllerNavigationDirection.Forward : UIPageViewControllerNavigationDirection.Reverse;
-
-                prevBtnClicked = false;
-
+                // Fix wrong animation direction when position changed from code behind
+                var isForward = (position >= _prevPosition && position - _prevPosition == 1) || _prevBtnClicked == false || (position == 0 && _prevPosition == Element.ItemsSource?.GetCount() - 1 && Element.InfiniteScrolling);
+                var navDirection = isForward ? UIPageViewControllerNavigationDirection.Forward : UIPageViewControllerNavigationDirection.Reverse;
                 var firstViewController = CreateViewController(position);
 
-                pageController.SetViewControllers(new[] { firstViewController }, navdirection, Element.AnimateTransition, s =>
+                pageController.SetViewControllers(new[] { firstViewController }, navDirection, Element.AnimateTransition, s =>
                 {
                     SetArrowsVisibility();
                     SetIndicatorsCurrentPage();
@@ -1195,7 +1193,8 @@ namespace CarouselView.iOS
                     SendPositionSelected();
                 });
 
-                prevPosition = position;
+                _prevBtnClicked = null;
+                _prevPosition = position;
             }
         }
 
