@@ -53,6 +53,10 @@ The MIT License (MIT) see [License file](LICENSE)
 
 
 ## Release Notes
+## 1.0.6
+
+1.Add .NET 8 support.
+
 ## 1.0.5
 
 1.Fix wrong animation direction when position changed from code behind.
