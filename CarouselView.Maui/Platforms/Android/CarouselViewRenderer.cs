@@ -65,25 +65,30 @@ namespace CarouselView.Droid
 
             // KeyboardService code
             var activity = FindActivity(_context);
-
             if (activity != null)
             {
                 keyboardService = new SoftKeyboardService(activity);
             }
         }
 
-        private Android.App.Activity FindActivity(Context context)
+        private Android.App.Activity? FindActivity(Context? context)
         {
-            var activity = context as Android.App.Activity;
-            if (activity != null)
+            if (context == null) return null;
+
+            if (context is Android.App.Activity activity)
             {
                 return activity;
             }
-            var contextWrapper = _context as Android.Content.ContextWrapper;
-            if (contextWrapper != null)
+            
+            if (_context is Android.Views.ContextThemeWrapper contextThemeWrapper)
+            {
+                return FindActivity(contextThemeWrapper.BaseContext);
+            }
+            else if (_context is Android.Content.ContextWrapper contextWrapper)
             {
                 return FindActivity(contextWrapper.BaseContext);
             }
+
             return null;
         }
 
