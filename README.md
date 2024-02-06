@@ -53,6 +53,11 @@ The MIT License (MIT) see [License file](LICENSE)
 
 
 ## Release Notes
+
+## 1.0.7
+
+1.Fix Android Java.Lang.NullPointerException convert crash when targeting to some old version android sdk. (Thanks PR by https://github.com/vitalii-smal)
+
 ## 1.0.6
 
 1.Add .NET 8 support.
