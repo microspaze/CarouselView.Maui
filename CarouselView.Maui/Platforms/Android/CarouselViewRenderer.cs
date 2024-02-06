@@ -79,12 +79,11 @@ namespace CarouselView.Droid
             {
                 return activity;
             }
-            
-            if (_context is Android.Views.ContextThemeWrapper contextThemeWrapper)
+            else if (context is Android.Views.ContextThemeWrapper contextThemeWrapper)
             {
                 return FindActivity(contextThemeWrapper.BaseContext);
             }
-            else if (_context is Android.Content.ContextWrapper contextWrapper)
+            else if (context is Android.Content.ContextWrapper contextWrapper)
             {
                 return FindActivity(contextWrapper.BaseContext);
             }
