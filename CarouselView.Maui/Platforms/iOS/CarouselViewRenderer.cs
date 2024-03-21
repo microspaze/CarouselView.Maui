@@ -64,6 +64,7 @@ namespace CarouselView.iOS
             base.LayoutSubviews();
             
             //Reset safeAreaInsets to UIEdgeInsets.Zero
+            if (pageController == null || pageController.View == null) { return; }
             var safeAreaInsets = pageController.View.SafeAreaInsets;
             if (safeAreaInsets != UIEdgeInsets.Zero)
             {
@@ -1218,7 +1219,7 @@ namespace CarouselView.iOS
 
             if (Source != null && Source?.Count > 0)
             {
-                bindingContext = Source.Cast<object>().ElementAt(index);
+                bindingContext = Source.ElementAt(index);
             }
             
             // Return from the local copy of controllers
@@ -1234,19 +1235,16 @@ namespace CarouselView.iOS
                     return controller;
                 }
             }
-            
-            // Support for List<View> as ItemsSource
-            var view = bindingContext as View;
 
             // Support for List<DataTemplate> as ItemsSource
-            var dt = bindingContext as DataTemplate;
-            if (dt != null)
+            if (bindingContext is DataTemplate dt)
             {
                 formsView = (View)dt.CreateContent();
             }
             else
             {
-                if (view != null)
+                // Support for List<View> as ItemsSource
+                if (bindingContext is View view)
                 {
                     formsView = view;
                 }

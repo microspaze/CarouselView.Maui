@@ -1186,26 +1186,26 @@ namespace CarouselView.Droid
 
                 if (Source != null && Source?.Count > 0)
                 {
-                    bindingContext = Source.Cast<object>().ElementAt(position);
+                    bindingContext = Source.ElementAt(position);
                 }
-
-                var view = bindingContext as View;
 
                 // Return from the local copy of views
                 //if (mViewStates == null)
                 //    mViewStates = new List<AndroidViews.View>();
 
                 // Support for List<DataTemplate> as ItemsSource
-                var dt = bindingContext as DataTemplate;
-                if (dt != null)
+                var isViewSource = false;
+                if (bindingContext is DataTemplate dt)
                 {
                     formsView = (View)dt.CreateContent();
                 }
                 else
                 {
-                    if (view != null)
+                    // Support for List<View> as ItemsSource
+                    if (bindingContext is View view)
                     {
                         formsView = view;
+                        isViewSource = true;
                     }
                     else
                     {
@@ -1239,7 +1239,7 @@ namespace CarouselView.Droid
                 this.Element.AddItemView(position, formsView);
 
                 // NEW: if infinite scrolling, reset view renderer
-                if (Element.InfiniteScrolling)
+                if (Element.InfiniteScrolling || isViewSource)
                 {
                     Platform.SetRenderer(formsView, null);
                 }
