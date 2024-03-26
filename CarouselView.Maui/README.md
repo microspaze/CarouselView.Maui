@@ -54,6 +54,11 @@ The MIT License (MIT) see [License file](LICENSE)
 
 ## Release Notes
 
+## 1.0.8
+
+1.Fix Android Cannot Access A Disposed Object when use view list as ItemsSource.
+2.Fix iOS NullPointerException when use view list as ItemSource.
+
 ## 1.0.7
 
 1.Fix Android Java.Lang.NullPointerException convert crash when targeting to some old version android sdk. (Thanks PR by https://github.com/vitalii-smal)
