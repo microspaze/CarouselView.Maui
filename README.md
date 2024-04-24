@@ -49,7 +49,13 @@ You can find all descriptions from the original repository
 
 
 ## License
-The MIT License (MIT) see [License file](LICENSE)
+The MIT License (MIT) see [License file](LICENSE.md)
+
+
+## Thanks
+Thank JetBrains for providing DEV tools in developing. (Especially on MacOS)
+
+![avatar](RGPopup.Samples/Resources/Images/jetbrains_logo.png)
 
 
 ## Release Notes
