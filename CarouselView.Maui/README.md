@@ -54,6 +54,10 @@ The MIT License (MIT) see [License file](LICENSE)
 
 ## Release Notes
 
+## 1.0.9
+
+1.Fix System.NullReferenceException in CarouselViewRenderer.UpdateCurrentPage #6 (Thanks PR by https://github.com/vector-perfect)
+
 ## 1.0.8
 
 1.Fix Android Cannot Access A Disposed Object when use view list as ItemsSource.
