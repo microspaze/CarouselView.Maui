@@ -1109,6 +1109,11 @@ namespace CarouselView.Droid
 
         void UpdateCurrentPage()
         {
+            if (Element == null)
+            {
+                return;
+            }
+
             SetCurrentPage(Element.InfiniteScrolling && Element.ItemsSource.GetCount() > 1 ? Element.Position + 1 : Element.Position);
         }
 
