@@ -138,7 +138,10 @@ namespace CarouselView.Droid
                 }
 
                 // KeyboardService code
-                Application.Current.MainPage.SizeChanged += MainPage_SizeChanged;
+                if(Application.Current?.MainPage != null) 
+                {
+                    Application.Current.MainPage.SizeChanged += MainPage_SizeChanged;
+                }
 
                 // Nullreference exception on external display #409
                 if (keyboardService != null)
