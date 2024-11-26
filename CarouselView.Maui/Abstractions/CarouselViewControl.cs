@@ -115,6 +115,14 @@ namespace CarouselView.Abstractions
             set { SetValue(AutoplayIntervalProperty, value); }
         }
 
+        public static readonly BindableProperty IgnoreSafeAreaProperty = BindableProperty.Create("IgnoreSafeArea", typeof(bool), typeof(CarouselViewControl), true);
+
+        public bool IgnoreSafeArea
+        {
+            get { return (bool)GetValue(IgnoreSafeAreaProperty); }
+            set { SetValue(IgnoreSafeAreaProperty, value); }
+        }
+
         #region Indicators
 
         public static readonly BindableProperty IndicatorsTintColorProperty = BindableProperty.Create("IndicatorsTintColor", typeof(Color), typeof(CarouselViewControl), Colors.Silver);
