@@ -1,10 +1,11 @@
-using System.Collections.Specialized;
-using System.ComponentModel;
 using CarouselView.Abstractions;
 using CoreGraphics;
 using Foundation;
+using Microsoft.Maui.Controls;
 using Microsoft.Maui.Controls.Platform;
 using Microsoft.Maui.Platform;
+using System.Collections.Specialized;
+using System.ComponentModel;
 using UIKit;
 
 /*
@@ -32,7 +33,7 @@ namespace CarouselView.iOS
     /// <summary>
     /// CarouselView Renderer
     /// </summary>
-    public class CarouselViewRenderer : Microsoft.Maui.Controls.Handlers.Compatibility.ViewRenderer<CarouselViewControl, UIView>
+    public class CarouselViewRenderer
     {
         bool carouselOrientationChanged;
 
@@ -43,6 +44,8 @@ namespace CarouselView.iOS
         UIButton prevBtn;
         UIButton nextBtn;
 
+        CarouselViewControl _control;
+        IMauiContext? _mauiContext => Application.Current?.Windows[0]?.Handler?.MauiContext;
         bool _disposed;
 
         // A local copy of ItemsSource so we can use CollectionChanged events
@@ -59,9 +62,29 @@ namespace CarouselView.iOS
         bool isChangingPosition;
         bool isChangingSelectedItem;
 
-        public override void LayoutSubviews()
+        public CarouselViewRenderer(CarouselViewControl control)
         {
-            base.LayoutSubviews();
+            if (_control == null)
+            {
+                // Instantiate the native control and assign it to the Control property with
+                // the SetNativeControl method (called when Height BP changes)
+                carouselOrientationChanged = true;
+            }
+
+            _control = control;
+            _control.PropertyChanged += OnElementPropertyChanged;
+            _control.SizeChanged += OnElementSizeChanged;
+
+            // Configure the control and subscribe to event handlers
+            if (_control.ItemsSource != null && _control.ItemsSource is INotifyCollectionChanged)
+            {
+                ((INotifyCollectionChanged)_control.ItemsSource).CollectionChanged += ItemsSource_CollectionChanged;
+            }
+        }
+
+        public void LayoutSubviews()
+        {
+            //base.LayoutSubviews();
             
             //Reset safeAreaInsets to UIEdgeInsets.Zero
             if (pageController == null || pageController.View == null) { return; }
@@ -72,63 +95,26 @@ namespace CarouselView.iOS
             }
         }
 
-        protected override void OnElementChanged(ElementChangedEventArgs<CarouselViewControl> e)
-        {
-            base.OnElementChanged(e);
-
-            if (Control == null)
-            {
-                // Instantiate the native control and assign it to the Control property with
-                // the SetNativeControl method (called when Height BP changes)
-                carouselOrientationChanged = true;
-            }
-
-            if (e.OldElement != null)
-            {
-                // Unsubscribe from event handlers and cleanup any resources
-
-                if (Element == null) return;
-
-                Element.SizeChanged -= Element_SizeChanged;
-                if (Element.ItemsSource != null && Element.ItemsSource is INotifyCollectionChanged)
-                {
-                    ((INotifyCollectionChanged)Element.ItemsSource).CollectionChanged -= ItemsSource_CollectionChanged;
-                }
-                RemoveAutoplayBehavior();
-            }
-
-            if (e.NewElement != null)
-            {
-                Element.SizeChanged += Element_SizeChanged;
-
-                // Configure the control and subscribe to event handlers
-                if (Element.ItemsSource != null && Element.ItemsSource is INotifyCollectionChanged)
-                {
-                    ((INotifyCollectionChanged)Element.ItemsSource).CollectionChanged += ItemsSource_CollectionChanged;
-                }
-            }
-        }
-
         void AddAutoplayBehavior()
         {
-            if (Element.InfiniteScrolling && Element.AutoplayInterval > 0 && Element.ItemsSource?.GetCount() > 1)
+            if (_control.InfiniteScrolling && _control.AutoplayInterval > 0 && _control.ItemsSource?.GetCount() > 1)
             {
-                Element.Behaviors.Add(new AutoplayBehavior() { Delay = Element.AutoplayInterval * 1000 });
+                _control.Behaviors.Add(new AutoplayBehavior() { Delay = _control.AutoplayInterval * 1000 });
             }
         }
 
         void RemoveAutoplayBehavior()
         {
-            if (Element.Behaviors.FirstOrDefault((arg) => arg is AutoplayBehavior) is AutoplayBehavior autoplay)
+            if (_control.Behaviors.FirstOrDefault((arg) => arg is AutoplayBehavior) is AutoplayBehavior autoplay)
             {
                 autoplay.StopTimer();
-                Element.Behaviors.Remove(autoplay);
+                _control.Behaviors.Remove(autoplay);
             }
         }
 
         async void ItemsSource_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
         {
-            if (Element == null || pageController == null || Source == null) return;
+            if (_control == null || pageController == null || Source == null) return;
 
             RemoveAutoplayBehavior();
 
@@ -136,7 +122,7 @@ namespace CarouselView.iOS
             // If NewStartingIndex is not -1, then it contains the index where the new item was added.
             if (e.Action == NotifyCollectionChangedAction.Add)
             {
-                InsertPage(Element?.ItemsSource?.GetItem(e.NewStartingIndex), e.NewStartingIndex);
+                InsertPage(_control?.ItemsSource?.GetItem(e.NewStartingIndex), e.NewStartingIndex);
             }
 
             // OldItems contains the item that was removed.
@@ -160,7 +146,7 @@ namespace CarouselView.iOS
                 pageController.SetViewControllers(new[] { firstViewController }, UIPageViewControllerNavigationDirection.Forward, false, s =>
                 {
                     isChangingPosition = true;
-                    Element.Position = e.NewStartingIndex;
+                    _control.Position = e.NewStartingIndex;
                     isChangingPosition = false;
 
                     SetArrowsVisibility();
@@ -183,7 +169,7 @@ namespace CarouselView.iOS
 
                 Source[e.OldStartingIndex] = e.NewItems[0];
 
-                var firstViewController = CreateViewController(Element.Position);
+                var firstViewController = CreateViewController(_control.Position);
 
                 pageController.SetViewControllers(new[] { firstViewController }, UIPageViewControllerNavigationDirection.Forward, false, s =>
                 {
@@ -204,17 +190,17 @@ namespace CarouselView.iOS
         void SendPositionSelected()
         {
             isChangingSelectedItem = true;
-            Element.SelectedItem = Element.ItemsSource?.GetItem(Element.Position);
+            _control.SelectedItem = _control.ItemsSource?.GetItem(_control.Position);
             isChangingSelectedItem = false;
-            Element.SendPositionSelected();
-            Element.PositionSelectedCommand?.Execute(new PositionSelectedEventArgs() { NewValue = Element.Position });
+            _control.SendPositionSelected();
+            _control.PositionSelectedCommand?.Execute(new PositionSelectedEventArgs() { NewValue = _control.Position });
         }
 
         void ResetAdapter()
         {
             CleanUpPageController();
 
-            Source = Element.ItemsSource != null ? new List<object>(Element.ItemsSource.GetList()) : null;
+            Source = _control.ItemsSource != null ? new List<object>(_control.ItemsSource.GetList()) : null;
 
             SetArrowsVisibility();
 
@@ -222,7 +208,7 @@ namespace CarouselView.iOS
 
             if (Source != null && Source?.Count > 0)
             {
-                var firstViewController = CreateViewController(Element.Position);
+                var firstViewController = CreateViewController(_control.Position);
 
                 pageController.SetViewControllers(new[] { firstViewController }, UIPageViewControllerNavigationDirection.Forward, false, s =>
                 {
@@ -230,11 +216,11 @@ namespace CarouselView.iOS
             }
         }
 
-        void Element_SizeChanged(object sender, EventArgs e)
+        void OnElementSizeChanged(object? sender, EventArgs e)
         {
-            if (Element == null) return;
+            if (_control == null) return;
 
-            var rect = this.Element.Bounds;
+            var rect = this._control.Bounds;
             // To avoid extra DataTemplate instantiations #158
             if (rect.Height > 0)
             {
@@ -251,40 +237,40 @@ namespace CarouselView.iOS
 
         // Fix #129 CarouselViewControl not rendered when loading a page from memory bug
         // Fix #157 CarouselView Binding breaks when returning to Page bug duplicate
-        public override void MovedToSuperview()
+        public void MovedToSuperview()
         {
-            if (Control == null)
-            {
-                Element_SizeChanged(Element, null);
-            }
+            //if (Control == null)
+            //{
+            //    Element_SizeChanged(_control, null);
+            //}
 
-            base.MovedToSuperview();
+            //base.MovedToSuperview();
         }
 
-        public override void MovedToWindow()
+        public void MovedToWindow()
         {
-            if (Control == null)
-            {
-                Element_SizeChanged(Element, null);
-            }
+            //if (Control == null)
+            //{
+            //    Element_SizeChanged(_control, null);
+            //}
 
-            base.MovedToWindow();
+            //base.MovedToWindow();
         }
 
-        protected override void OnElementPropertyChanged(object sender, PropertyChangedEventArgs e)
+        protected void OnElementPropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
-            base.OnElementPropertyChanged(sender, e);
+            //base.OnElementPropertyChanged(sender, e);
 
-            if (Element == null || pageController == null) return;
+            if (_control == null || pageController == null) return;
 
             switch (e.PropertyName)
             {
                 case "Renderer":
                     // Fix for issues after recreating the control #86
-                    _prevPosition = Element.Position;
+                    _prevPosition = _control.Position;
                     break;
                 case "IsVisible":
-                    pageController.View.Hidden = !Element.IsVisible;
+                    pageController.View.Hidden = !_control.IsVisible;
                     break;
                 case "Orientation":
                     RemoveAutoplayBehavior();
@@ -294,7 +280,7 @@ namespace CarouselView.iOS
                     AddAutoplayBehavior();
                     break;
                 case "BackgroundColor":
-                    pageController.View.BackgroundColor = Element.BackgroundColor?.ToPlatform();
+                    pageController.View.BackgroundColor = _control.BackgroundColor?.ToPlatform();
                     break;
                 case "IsSwipeEnabled":
                     SetIsSwipeEnabled();
@@ -316,9 +302,9 @@ namespace CarouselView.iOS
                     SetPosition();
                     ResetAdapter();
                     SendPositionSelected();
-                    if (Element.ItemsSource != null && Element.ItemsSource is INotifyCollectionChanged)
+                    if (_control.ItemsSource != null && _control.ItemsSource is INotifyCollectionChanged)
                     {
-                        ((INotifyCollectionChanged)Element.ItemsSource).CollectionChanged += ItemsSource_CollectionChanged;
+                        ((INotifyCollectionChanged)_control.ItemsSource).CollectionChanged += ItemsSource_CollectionChanged;
                     }
                     AddAutoplayBehavior();
                     break;
@@ -331,14 +317,14 @@ namespace CarouselView.iOS
                 case "Position":
                     if (!isChangingPosition)
                     {
-                        SetCurrentPage(Element.Position);
+                        SetCurrentPage(_control.Position);
                     }
                     break;
                 case "SelectedItem":
                     if (!isChangingSelectedItem)
                     {
                         // NEW
-                        Element.Position = Element.ItemsSource.GetList().IndexOf(Element.SelectedItem);
+                        _control.Position = _control.ItemsSource.GetList().IndexOf(_control.SelectedItem);
                     }
                     break;
                 case "ShowArrows":
@@ -346,20 +332,20 @@ namespace CarouselView.iOS
                     break;
                 case "ArrowsBackgroundColor":
                     if (prevBtn == null || nextBtn == null) return;
-                    prevBtn.BackgroundColor = Element.ArrowsBackgroundColor?.ToPlatform();
-                    nextBtn.BackgroundColor = Element.ArrowsBackgroundColor?.ToPlatform();
+                    prevBtn.BackgroundColor = _control.ArrowsBackgroundColor?.ToPlatform();
+                    nextBtn.BackgroundColor = _control.ArrowsBackgroundColor?.ToPlatform();
                     break;
                 case "ArrowsTintColor":
                     if (prevBtn == null || nextBtn == null) return;
                     var prevArrow = (UIImageView)prevBtn.Subviews[0];
-                    prevArrow.TintColor = Element.ArrowsTintColor?.ToPlatform();
+                    prevArrow.TintColor = _control.ArrowsTintColor?.ToPlatform();
                     var nextArrow = (UIImageView)nextBtn.Subviews[0];
-                    nextArrow.TintColor = Element.ArrowsTintColor?.ToPlatform();
+                    nextArrow.TintColor = _control.ArrowsTintColor?.ToPlatform();
                     break;
                 case "ArrowsTransparency":
                     if (prevBtn == null || nextBtn == null) return;
-                    prevBtn.Alpha = Element.ArrowsTransparency;
-                    nextBtn.Alpha = Element.ArrowsTransparency;
+                    prevBtn.Alpha = _control.ArrowsTransparency;
+                    nextBtn.Alpha = _control.ArrowsTransparency;
                     break;
                 case "InfiniteScrolling":
                     // Do nothing
@@ -406,7 +392,7 @@ namespace CarouselView.iOS
                 var controller = (ViewContainer)pageController.ViewControllers[0];
                 var position = Source.IndexOf(controller.Tag);
                 isChangingPosition = true;
-                Element.Position = position;
+                _control.Position = position;
                 isChangingPosition = false;
                 _prevPosition = position;
                 SetArrowsVisibility();
@@ -417,17 +403,17 @@ namespace CarouselView.iOS
 
         #endregion
 
-        void SetNativeView()
+        public UIView SetNativeView()
         {
             // Rotation bug(iOS) #115 Fix
             CleanUpPageController();
 
             if (carouselOrientationChanged)
             {
-                var interPageSpacing = (float)Element.InterPageSpacing;
+                var interPageSpacing = (float)_control.InterPageSpacing;
 
                 // Orientation BP
-                var orientation = (UIPageViewControllerNavigationOrientation)Element.Orientation;
+                var orientation = (UIPageViewControllerNavigationOrientation)_control.Orientation;
 
                 // InterPageSpacing BP
                 pageController = new UIPageViewController(UIPageViewControllerTransitionStyle.Scroll,
@@ -435,10 +421,10 @@ namespace CarouselView.iOS
                 pageController.View.ClipsToBounds = true;
             }
 
-            Source = Element.ItemsSource != null ? new List<object>(Element.ItemsSource.GetList()) : null;
+            Source = _control.ItemsSource != null ? new List<object>(_control.ItemsSource.GetList()) : null;
 
             // BackgroundColor BP
-            pageController.View.BackgroundColor = Element.BackgroundColor?.ToPlatform();
+            pageController.View.BackgroundColor = _control.BackgroundColor?.ToPlatform();
 
             #region adapter
 
@@ -453,7 +439,7 @@ namespace CarouselView.iOS
                     // Determine if we are on the first page
                     if (position == 0)
                     {
-                        if (Element.InfiniteScrolling && Element.ItemsSource.GetCount() > 1)
+                        if (_control.InfiniteScrolling && _control.ItemsSource.GetCount() > 1)
                         {
                             int previousPageIndex = Source.Count - 1;
                             return CreateViewController(previousPageIndex);
@@ -487,7 +473,7 @@ namespace CarouselView.iOS
                     // Determine if we are on the last page
                     if (position == Count - 1)
                     {
-                        if (Element.InfiniteScrolling && Element.ItemsSource.GetCount() > 1)
+                        if (_control.InfiniteScrolling && _control.ItemsSource.GetCount() > 1)
                         {
                             int nextPageIndex = 0;
                             return CreateViewController(nextPageIndex);
@@ -522,9 +508,9 @@ namespace CarouselView.iOS
                     scrollView.DraggingStarted += Scroller_DraggingStarted;
                     scrollView.DraggingEnded += Scroller_DraggingEnded;
 
-                    if (Element.GestureRecognizers.FirstOrDefault((arg) => arg is SwipeGestureRecognizer) is SwipeGestureRecognizer swipe)
+                    if (_control.GestureRecognizers.FirstOrDefault((arg) => arg is SwipeGestureRecognizer) is SwipeGestureRecognizer swipe)
                     {
-                        if (Element.IsSwipeEnabled)
+                        if (_control.IsSwipeEnabled)
                         {
                             var command = swipe.Command;
                             var param = swipe.CommandParameter;
@@ -537,7 +523,7 @@ namespace CarouselView.iOS
                                 }
                             });
 
-                            swipe1.Direction = Element.Orientation == CarouselViewOrientation.Horizontal ? UISwipeGestureRecognizerDirection.Up : UISwipeGestureRecognizerDirection.Left;
+                            swipe1.Direction = _control.Orientation == CarouselViewOrientation.Horizontal ? UISwipeGestureRecognizerDirection.Up : UISwipeGestureRecognizerDirection.Left;
 
                             var swipe2 = new UISwipeGestureRecognizer((s2) =>
                             {
@@ -547,13 +533,13 @@ namespace CarouselView.iOS
                                 }
                             });
 
-                            swipe2.Direction = Element.Orientation == CarouselViewOrientation.Horizontal ? UISwipeGestureRecognizerDirection.Down : UISwipeGestureRecognizerDirection.Right;
+                            swipe2.Direction = _control.Orientation == CarouselViewOrientation.Horizontal ? UISwipeGestureRecognizerDirection.Down : UISwipeGestureRecognizerDirection.Right;
 
                             scrollView.AddGestureRecognizer(swipe1);
                             scrollView.AddGestureRecognizer(swipe2); 
                         }
 
-                        Element.GestureRecognizers.Remove(swipe);
+                        _control.GestureRecognizers.Remove(swipe);
                     }
                 }
             }
@@ -565,14 +551,14 @@ namespace CarouselView.iOS
 
             if (Source != null && Source?.Count > 0)
             {
-                var firstViewController = CreateViewController(Element.Position);
+                var firstViewController = CreateViewController(_control.Position);
 
                 pageController.SetViewControllers(new[] { firstViewController }, UIPageViewControllerNavigationDirection.Forward, false, s =>
                 {
                 });
             }
 
-            SetNativeControl(pageController.View);
+            //SetNativeControl(pageController.View);
 
             // ARROWS
             SetArrows();
@@ -581,14 +567,16 @@ namespace CarouselView.iOS
             SetIndicators();
 
             SetIndicatorsVisibility();
+
+            return pageController.View;
         }
 
         void SetIsSwipeEnabled()
         {
             if (scrollView != null)
             {
-                scrollView.ScrollEnabled = Element.IsSwipeEnabled;
-                //scrollView.Bounces = Element.IsSwipeEnabled;
+                scrollView.ScrollEnabled = _control.IsSwipeEnabled;
+                //scrollView.Bounces = _control.IsSwipeEnabled;
             }
         }
 
@@ -599,14 +587,14 @@ namespace CarouselView.iOS
         void Scroller_Scrolled(object sender, EventArgs e)
         {
             // Added safety to help resolve issue #404
-            if (Element == null) return;
+            if (_control == null) return;
 
             //var scrollView = (UIScrollView)sender;
             var point = scrollView.ContentOffset;
 
             double currentPercentCompleted;
 
-            if (Element.Orientation == CarouselViewOrientation.Horizontal)
+            if (_control.Orientation == CarouselViewOrientation.Horizontal)
             {
                 currentPercentCompleted = Math.Floor((Math.Abs(point.X - pageController.View.Frame.Size.Width) / pageController.View.Frame.Size.Width) * 100);
                 direction = prevPoint > point.X ? ScrollDirection.Left : ScrollDirection.Right;
@@ -628,8 +616,8 @@ namespace CarouselView.iOS
                     reportedPercentCompleted = -reportedPercentCompleted;
                 }
 
-                Element.SendScrolled(reportedPercentCompleted, direction);
-                Element.ScrolledCommand?.Execute(new Abstractions.ScrolledEventArgs()
+                _control.SendScrolled(reportedPercentCompleted, direction);
+                _control.ScrolledCommand?.Execute(new Abstractions.ScrolledEventArgs()
                 {
                     NewValue = reportedPercentCompleted,
                     Direction = direction
@@ -652,32 +640,32 @@ namespace CarouselView.iOS
         {
             AddAutoplayBehavior();
 
-            if (Element.Position == Element.ItemsSource.GetCount() - 1 && !Element.InfiniteScrolling && (direction == ScrollDirection.Right || direction == ScrollDirection.Down))
+            if (_control.Position == _control.ItemsSource.GetCount() - 1 && !_control.InfiniteScrolling && (direction == ScrollDirection.Right || direction == ScrollDirection.Down))
             {
-                Element.SendLoadMore();
-                Element.LoadMoreCommand?.Execute(null);
+                _control.SendLoadMore();
+                _control.LoadMoreCommand?.Execute(null);
             }
         }
 
         void SetPosition()
         {
             isChangingPosition = true;
-            if (Element.ItemsSource != null)
+            if (_control.ItemsSource != null)
             {
-                if (Element.Position > Element.ItemsSource.GetCount() - 1)
+                if (_control.Position > _control.ItemsSource.GetCount() - 1)
                 {
-                    Element.Position = Element.ItemsSource.GetCount() - 1;
+                    _control.Position = _control.ItemsSource.GetCount() - 1;
                 }
-                if (Element.Position == -1)
+                if (_control.Position == -1)
                 {
-                    Element.Position = 0;
+                    _control.Position = 0;
                 }
             }
             else
             {
-                Element.Position = 0;
+                _control.Position = 0;
             }
-            _prevPosition = Element.Position;
+            _prevPosition = _control.Position;
             isChangingPosition = false;
         }
 
@@ -685,47 +673,47 @@ namespace CarouselView.iOS
         {
             CleanUpArrows();
 
-            if (Element.ShowArrows)
+            if (_control.ShowArrows)
             {
-                var o = Element.Orientation == CarouselViewOrientation.Horizontal ? "H" : "V";
-                var formatOptions = Element.Orientation == CarouselViewOrientation.Horizontal ? NSLayoutFormatOptions.AlignAllCenterY : NSLayoutFormatOptions.AlignAllCenterX;
+                var o = _control.Orientation == CarouselViewOrientation.Horizontal ? "H" : "V";
+                var formatOptions = _control.Orientation == CarouselViewOrientation.Horizontal ? NSLayoutFormatOptions.AlignAllCenterY : NSLayoutFormatOptions.AlignAllCenterX;
 
-                var w = Element.Orientation == CarouselViewOrientation.Horizontal ? Element.ArrowsSize + 3 : Element.ArrowsSize + 19;
-                var h = Element.Orientation == CarouselViewOrientation.Horizontal ? Element.ArrowsSize + 19 : Element.ArrowsSize + 3;
-                var margin = Element.ArrowsParentMargin;
+                var w = _control.Orientation == CarouselViewOrientation.Horizontal ? _control.ArrowsSize + 3 : _control.ArrowsSize + 19;
+                var h = _control.Orientation == CarouselViewOrientation.Horizontal ? _control.ArrowsSize + 19 : _control.ArrowsSize + 3;
+                var margin = _control.ArrowsParentMargin;
 
                 if (prevBtn == null)
                 {
                     prevBtn = new UIButton();
                     prevBtn.TranslatesAutoresizingMaskIntoConstraints = false;
-                    prevBtn.Alpha = Element.ArrowsTransparency;
+                    prevBtn.Alpha = _control.ArrowsTransparency;
 
-                    if (Element.PrevArrowTemplate == null)
+                    if (_control.PrevArrowTemplate == null)
                     { 
-                        prevBtn.BackgroundColor = Element.ArrowsBackgroundColor?.ToPlatform();
+                        prevBtn.BackgroundColor = _control.ArrowsBackgroundColor?.ToPlatform();
                         
                         var prevArrow = new UIImageView();
-                        var prevArrowImage = new UIImage(Element.Orientation == CarouselViewOrientation.Horizontal ? "prev.png" : "up.png");
+                        var prevArrowImage = new UIImage(_control.Orientation == CarouselViewOrientation.Horizontal ? "prev.png" : "up.png");
                         prevArrow.Image = prevArrowImage.ImageWithRenderingMode(UIImageRenderingMode.AlwaysTemplate);
                         prevArrow.TranslatesAutoresizingMaskIntoConstraints = false;
-                        prevArrow.TintColor = Element.ArrowsTintColor?.ToPlatform();
+                        prevArrow.TintColor = _control.ArrowsTintColor?.ToPlatform();
 
                         prevBtn.AddSubview(prevArrow);
 
                         var prevViewsDictionary = NSDictionary.FromObjectsAndKeys(new NSObject[] { prevBtn, prevArrow }, new NSObject[] { new NSString("superview"), new NSString("prevArrow") });
-                        prevBtn.AddConstraints(NSLayoutConstraint.FromVisualFormat("[prevArrow(==" + Element.ArrowsSize + ")]", 0, new NSDictionary(), prevViewsDictionary));
-                        prevBtn.AddConstraints(NSLayoutConstraint.FromVisualFormat("V:[prevArrow(==" + Element.ArrowsSize + ")]", 0, new NSDictionary(), prevViewsDictionary));
+                        prevBtn.AddConstraints(NSLayoutConstraint.FromVisualFormat("[prevArrow(==" + _control.ArrowsSize + ")]", 0, new NSDictionary(), prevViewsDictionary));
+                        prevBtn.AddConstraints(NSLayoutConstraint.FromVisualFormat("V:[prevArrow(==" + _control.ArrowsSize + ")]", 0, new NSDictionary(), prevViewsDictionary));
                         prevBtn.AddConstraints(NSLayoutConstraint.FromVisualFormat(o + ":[prevArrow]-(2)-|", 0, new NSDictionary(), prevViewsDictionary));
                         prevBtn.AddConstraints(NSLayoutConstraint.FromVisualFormat(o + ":[superview]-(<=1)-[prevArrow]", formatOptions, new NSDictionary(), prevViewsDictionary));
                     }
                     else
                     {
-                        var template = (View)Element.PrevArrowTemplate.CreateContent();
+                        var template = (View)_control.PrevArrowTemplate.CreateContent();
                         w = (int)template.WidthRequest;
                         h = (int)template.HeightRequest;
 
                         var rect = new CGRect(0, 0, w, h);
-                        var prevArrow = template.ToiOS(rect);
+                        var prevArrow = template.ToiOS(rect, _mauiContext);
                         prevArrow.TranslatesAutoresizingMaskIntoConstraints = false;
 
                         prevBtn.AddSubview(prevArrow);
@@ -745,9 +733,9 @@ namespace CarouselView.iOS
                     pageController.View.AddConstraints(NSLayoutConstraint.FromVisualFormat("V:[prevBtn(==" + h + ")]", 0, new NSDictionary(), btnsDictionary));
                     pageController.View.AddConstraints(NSLayoutConstraint.FromVisualFormat(o + ":|-" + margin + "-[prevBtn]", 0, new NSDictionary(), btnsDictionary));
 
-                    if (Element.Orientation == CarouselViewOrientation.Horizontal)
+                    if (_control.Orientation == CarouselViewOrientation.Horizontal)
                     {
-                        switch (Element.HorizontalArrowsPosition)
+                        switch (_control.HorizontalArrowsPosition)
                         {
                             case HorizontalArrowsPosition.Center:
                                 pageController.View.AddConstraints(NSLayoutConstraint.FromVisualFormat(o + ":[superview]-(<=1)-[prevBtn]", formatOptions, new NSDictionary(), btnsDictionary));
@@ -762,7 +750,7 @@ namespace CarouselView.iOS
                     }
                     else
                     {
-                        switch (Element.VerticalArrowsPosition)
+                        switch (_control.VerticalArrowsPosition)
                         {
                             case VerticalArrowsPosition.Center:
                                 pageController.View.AddConstraints(NSLayoutConstraint.FromVisualFormat(o + ":[superview]-(<=1)-[prevBtn]", formatOptions, new NSDictionary(), btnsDictionary));
@@ -781,34 +769,34 @@ namespace CarouselView.iOS
                 {
                     nextBtn = new UIButton();
                     nextBtn.TranslatesAutoresizingMaskIntoConstraints = false;
-                    nextBtn.Alpha = Element.ArrowsTransparency;
+                    nextBtn.Alpha = _control.ArrowsTransparency;
 
-                    if (Element.NextArrowTemplate == null)
+                    if (_control.NextArrowTemplate == null)
                     {
-                        nextBtn.BackgroundColor = Element.ArrowsBackgroundColor?.ToPlatform();
+                        nextBtn.BackgroundColor = _control.ArrowsBackgroundColor?.ToPlatform();
 
                         var nextArrow = new UIImageView();
-                        var nextArrowImage = new UIImage(Element.Orientation == CarouselViewOrientation.Horizontal ? "next.png" : "down.png");
+                        var nextArrowImage = new UIImage(_control.Orientation == CarouselViewOrientation.Horizontal ? "next.png" : "down.png");
                         nextArrow.Image = nextArrowImage.ImageWithRenderingMode(UIImageRenderingMode.AlwaysTemplate);
                         nextArrow.TranslatesAutoresizingMaskIntoConstraints = false;
-                        nextArrow.TintColor = Element.ArrowsTintColor?.ToPlatform();
+                        nextArrow.TintColor = _control.ArrowsTintColor?.ToPlatform();
 
                         nextBtn.AddSubview(nextArrow);
 
                         var nextViewsDictionary = NSDictionary.FromObjectsAndKeys(new NSObject[] { nextBtn, nextArrow }, new NSObject[] { new NSString("superview"), new NSString("nextArrow") });
-                        nextBtn.AddConstraints(NSLayoutConstraint.FromVisualFormat("[nextArrow(==" + Element.ArrowsSize + ")]", 0, new NSDictionary(), nextViewsDictionary));
-                        nextBtn.AddConstraints(NSLayoutConstraint.FromVisualFormat("V:[nextArrow(==" + Element.ArrowsSize + ")]", 0, new NSDictionary(), nextViewsDictionary));
+                        nextBtn.AddConstraints(NSLayoutConstraint.FromVisualFormat("[nextArrow(==" + _control.ArrowsSize + ")]", 0, new NSDictionary(), nextViewsDictionary));
+                        nextBtn.AddConstraints(NSLayoutConstraint.FromVisualFormat("V:[nextArrow(==" + _control.ArrowsSize + ")]", 0, new NSDictionary(), nextViewsDictionary));
                         nextBtn.AddConstraints(NSLayoutConstraint.FromVisualFormat(o + ":|-(2)-[nextArrow]", 0, new NSDictionary(), nextViewsDictionary));
                         nextBtn.AddConstraints(NSLayoutConstraint.FromVisualFormat(o + ":[superview]-(<=1)-[nextArrow]", formatOptions, new NSDictionary(), nextViewsDictionary));
                     }
                     else
                     {
-                        var template = (View)Element.NextArrowTemplate.CreateContent();
+                        var template = (View)_control.NextArrowTemplate.CreateContent();
                         w = (int)template.WidthRequest;
                         h = (int)template.HeightRequest;
 
                         var rect = new CGRect(0, 0, w, h);
-                        var nextArrow = template.ToiOS(rect);
+                        var nextArrow = template.ToiOS(rect, _mauiContext);
                         nextArrow.TranslatesAutoresizingMaskIntoConstraints = false;
 
                         nextBtn.AddSubview(nextArrow);
@@ -828,9 +816,9 @@ namespace CarouselView.iOS
                     pageController.View.AddConstraints(NSLayoutConstraint.FromVisualFormat("V:[nextBtn(==" + h + ")]", 0, new NSDictionary(), btnsDictionary));
                     pageController.View.AddConstraints(NSLayoutConstraint.FromVisualFormat(o + ":[nextBtn]-" + margin + "-|", 0, new NSDictionary(), btnsDictionary));
 
-                    if (Element.Orientation == CarouselViewOrientation.Horizontal)
+                    if (_control.Orientation == CarouselViewOrientation.Horizontal)
                     {
-                        switch (Element.HorizontalArrowsPosition)
+                        switch (_control.HorizontalArrowsPosition)
                         {
                             case HorizontalArrowsPosition.Center:
                                 pageController.View.AddConstraints(NSLayoutConstraint.FromVisualFormat(o + ":[superview]-(<=1)-[nextBtn]", formatOptions, new NSDictionary(), btnsDictionary));
@@ -845,7 +833,7 @@ namespace CarouselView.iOS
                     }
                     else
                     {
-                        switch (Element.VerticalArrowsPosition)
+                        switch (_control.VerticalArrowsPosition)
                         {
                             case VerticalArrowsPosition.Center:
                                 pageController.View.AddConstraints(NSLayoutConstraint.FromVisualFormat(o + ":[superview]-(<=1)-[nextBtn]", formatOptions, new NSDictionary(), btnsDictionary));
@@ -876,21 +864,21 @@ namespace CarouselView.iOS
         {
             RemoveAutoplayBehavior();
 
-            if (Element.Position > 0)
+            if (_control.Position > 0)
             {
                 _prevBtnClicked = true;
-                Element.Position--;
+                _control.Position--;
             }
-            else if (Element.InfiniteScrolling)
+            else if (_control.InfiniteScrolling)
             {
-                var position = Element.ItemsSource.GetCount() - 1;
+                var position = _control.ItemsSource.GetCount() - 1;
                 var lastViewController = CreateViewController(position);
                 _prevPosition = position;
 
                 pageController.SetViewControllers(new[] { lastViewController }, UIPageViewControllerNavigationDirection.Reverse, true, s =>
                 {
                     isChangingPosition = true;
-                    Element.Position = position;
+                    _control.Position = position;
                     isChangingPosition = false;
 
                     SetIndicatorsCurrentPage();
@@ -907,12 +895,12 @@ namespace CarouselView.iOS
         {
             RemoveAutoplayBehavior();
 
-            if (Element.Position < Element.ItemsSource?.GetCount() - 1)
+            if (_control.Position < _control.ItemsSource?.GetCount() - 1)
             {
                 _prevBtnClicked = false;
-                Element.Position++;
+                _control.Position++;
             }
-            else if (Element.InfiniteScrolling)
+            else if (_control.InfiniteScrolling)
             {
                 var firstViewController = CreateViewController(0);
                 _prevPosition = 0;
@@ -920,7 +908,7 @@ namespace CarouselView.iOS
                 pageController.SetViewControllers(new[] { firstViewController }, UIPageViewControllerNavigationDirection.Forward, true, s =>
                 {
                     isChangingPosition = true;
-                    Element.Position = 0;
+                    _control.Position = 0;
                     isChangingPosition = false;
 
                     SetIndicatorsCurrentPage();
@@ -936,8 +924,8 @@ namespace CarouselView.iOS
         void SetArrowsVisibility()
         {
             if (prevBtn == null || nextBtn == null) return;
-            prevBtn.Hidden = (Element.Position == 0 && !Element.InfiniteScrolling) || (Element.InfiniteScrolling && Element.ItemsSource?.GetCount() < 2) || Element.ItemsSource?.GetCount() == 0 || Element.ItemsSource == null || !Element.ShowArrows;
-            nextBtn.Hidden = (Element.Position == Element.ItemsSource?.GetCount() - 1 && !Element.InfiniteScrolling) || (Element.InfiniteScrolling && Element.ItemsSource?.GetCount() < 2) || Element.ItemsSource?.GetCount() == 0 || Element.ItemsSource == null || !Element.ShowArrows;
+            prevBtn.Hidden = (_control.Position == 0 && !_control.InfiniteScrolling) || (_control.InfiniteScrolling && _control.ItemsSource?.GetCount() < 2) || _control.ItemsSource?.GetCount() == 0 || _control.ItemsSource == null || !_control.ShowArrows;
+            nextBtn.Hidden = (_control.Position == _control.ItemsSource?.GetCount() - 1 && !_control.InfiniteScrolling) || (_control.InfiniteScrolling && _control.ItemsSource?.GetCount() < 2) || _control.ItemsSource?.GetCount() == 0 || _control.ItemsSource == null || !_control.ShowArrows;
         }
 
         void SetIndicators()
@@ -948,11 +936,11 @@ namespace CarouselView.iOS
             pageController.View.AddSubview(pageControl);
             var viewsDictionary = NSDictionary.FromObjectsAndKeys(new NSObject[] { pageControl }, new NSObject[] { new NSString("pageControl") });
 
-            if (Element.Orientation == CarouselViewOrientation.Horizontal)
+            if (_control.Orientation == CarouselViewOrientation.Horizontal)
             {
                 pageController.View.AddConstraints(NSLayoutConstraint.FromVisualFormat("H:|[pageControl]|", NSLayoutFormatOptions.AlignAllCenterX, new NSDictionary(), viewsDictionary));
 
-                switch (Element.HorizontalIndicatorsPosition)
+                switch (_control.HorizontalIndicatorsPosition)
                 {
                     case HorizontalIndicatorsPosition.Top:
                         pageController.View.AddConstraints(NSLayoutConstraint.FromVisualFormat("V:|[pageControl]", 0, new NSDictionary(), viewsDictionary));
@@ -963,13 +951,13 @@ namespace CarouselView.iOS
                 }
             }
 
-            if (Element.Orientation == CarouselViewOrientation.Vertical)
+            if (_control.Orientation == CarouselViewOrientation.Vertical)
             {
                 pageControl.Transform = CGAffineTransform.MakeRotation(3.14159265f / 2);
                 pageController.View.AddConstraints(NSLayoutConstraint.FromVisualFormat("H:[pageControl(==36)]", 0, new NSDictionary(), viewsDictionary));
                 pageController.View.AddConstraints(NSLayoutConstraint.FromVisualFormat("V:|[pageControl]|", NSLayoutFormatOptions.AlignAllTop, new NSDictionary(), viewsDictionary));
 
-                switch (Element.VerticalIndicatorsPosition)
+                switch (_control.VerticalIndicatorsPosition)
                 {
                     case VerticalIndicatorsPosition.Left:
                         pageController.View.AddConstraints(NSLayoutConstraint.FromVisualFormat("H:|[pageControl]", 0, new NSDictionary(), viewsDictionary));
@@ -982,24 +970,24 @@ namespace CarouselView.iOS
 
             pageControl.Pages = Count;
             // IndicatorsTintColor BP
-            pageControl.PageIndicatorTintColor = Element.IndicatorsTintColor?.ToPlatform();
+            pageControl.PageIndicatorTintColor = _control.IndicatorsTintColor?.ToPlatform();
             // CurrentPageIndicatorTintColor BP
-            pageControl.CurrentPageIndicatorTintColor = Element.CurrentPageIndicatorTintColor?.ToPlatform();
-            pageControl.CurrentPage = Element.Position;
+            pageControl.CurrentPageIndicatorTintColor = _control.CurrentPageIndicatorTintColor?.ToPlatform();
+            pageControl.CurrentPage = _control.Position;
             // IndicatorsShape BP
             SetIndicatorsShape();
         }
 
         void SetIndicatorsVisibility()
         {
-            pageControl.Hidden = !Element.ShowIndicators;
+            pageControl.Hidden = !_control.ShowIndicators;
         }
 
         void SetIndicatorsTintColor()
         {
             if (pageControl == null) return;
 
-            pageControl.PageIndicatorTintColor = Element.IndicatorsTintColor?.ToPlatform();
+            pageControl.PageIndicatorTintColor = _control.IndicatorsTintColor?.ToPlatform();
             SetIndicatorsShape();
         }
 
@@ -1007,7 +995,7 @@ namespace CarouselView.iOS
         {
             if (pageControl == null) return;
 
-            pageControl.CurrentPageIndicatorTintColor = Element.CurrentPageIndicatorTintColor?.ToPlatform();
+            pageControl.CurrentPageIndicatorTintColor = _control.CurrentPageIndicatorTintColor?.ToPlatform();
             SetIndicatorsShape();
         }
 
@@ -1016,7 +1004,7 @@ namespace CarouselView.iOS
             if (pageControl == null) return;
 
             pageControl.Pages = Count;
-            pageControl.CurrentPage = Element.Position;
+            pageControl.CurrentPage = _control.Position;
             SetIndicatorsShape();
         }
 
@@ -1024,7 +1012,7 @@ namespace CarouselView.iOS
         {
             if (pageControl == null) return;
 
-            if (Element.IndicatorsShape == IndicatorsShape.Square)
+            if (_control.IndicatorsShape == IndicatorsShape.Square)
             {
                 foreach (var view in pageControl.Subviews)
                 {
@@ -1052,7 +1040,7 @@ namespace CarouselView.iOS
 
         void InsertPage(object item, int position)
         {
-            if (Element == null || pageController == null || Source == null) return;
+            if (_control == null || pageController == null || Source == null) return;
 
             Source.Insert(position, item);
 
@@ -1066,19 +1054,19 @@ namespace CarouselView.iOS
                 }
                 else
                 {
-                    firstViewController = CreateViewController(Element.Position);
+                    firstViewController = CreateViewController(_control.Position);
                 }
 
                 pageController.SetViewControllers(new[] { firstViewController }, UIPageViewControllerNavigationDirection.Forward, false, s =>
                 {
                     // To keep the same view visible when inserting in a position <= current (like Android ViewPager)
-                    if (position <= Element.Position && Source.Count > 1)
+                    if (position <= _control.Position && Source.Count > 1)
                     {
                         isChangingPosition = true;
-                        Element.Position++;
+                        _control.Position++;
                         isChangingPosition = false;
 
-                        _prevPosition = Element.Position;
+                        _prevPosition = _control.Position;
                     }
 
                     SetArrowsVisibility();
@@ -1099,7 +1087,7 @@ namespace CarouselView.iOS
 
         async Task RemovePage(int position)
         {
-            if (Element == null || pageController == null || Source == null) return;
+            if (_control == null || pageController == null || Source == null) return;
 
             if (Source?.Count > 0)
             {
@@ -1120,7 +1108,7 @@ namespace CarouselView.iOS
                     Source.RemoveAt(position);
 
                     // To remove current page
-                    if (position == Element.Position)
+                    if (position == _control.Position)
                     {
                         var newPos = position - 1;
                         if (newPos == -1)
@@ -1129,7 +1117,7 @@ namespace CarouselView.iOS
                         }
 
                         // With a swipe transition
-                        if (Element.AnimateTransition)
+                        if (_control.AnimateTransition)
                         {
                             await Task.Delay(100);
                         }
@@ -1137,10 +1125,10 @@ namespace CarouselView.iOS
                         var navdirection = position == 0 ? UIPageViewControllerNavigationDirection.Forward : UIPageViewControllerNavigationDirection.Reverse;
                         var firstViewController = CreateViewController(newPos);
 
-                        pageController.SetViewControllers(new[] { firstViewController }, navdirection, Element.AnimateTransition, s =>
+                        pageController.SetViewControllers(new[] { firstViewController }, navdirection, _control.AnimateTransition, s =>
                         {
                             isChangingPosition = true;
-                            Element.Position = newPos;
+                            _control.Position = newPos;
                             isChangingPosition = false;
 
                             SetArrowsVisibility();
@@ -1167,7 +1155,7 @@ namespace CarouselView.iOS
                     }
                 }
 
-                _prevPosition = Element.Position;
+                _prevPosition = _control.Position;
             }
         }
 
@@ -1175,17 +1163,17 @@ namespace CarouselView.iOS
 
         void SetCurrentPage(int position)
         {
-            if (Element == null || position < 0 || position > Element.ItemsSource?.GetCount() - 1) return;
+            if (_control == null || position < 0 || position > _control.ItemsSource?.GetCount() - 1) return;
 
-            if (Element.ItemsSource?.GetCount() > 0)
+            if (_control.ItemsSource?.GetCount() > 0)
             {
                 // Transition direction based on prevPosition or if prevBtn has been clicked
                 // Fix wrong animation direction when position changed from code behind
-                var isForward = (position >= _prevPosition && position - _prevPosition == 1) || _prevBtnClicked == false || (position == 0 && _prevPosition == Element.ItemsSource?.GetCount() - 1 && Element.InfiniteScrolling);
+                var isForward = (position >= _prevPosition && position - _prevPosition == 1) || _prevBtnClicked == false || (position == 0 && _prevPosition == _control.ItemsSource?.GetCount() - 1 && _control.InfiniteScrolling);
                 var navDirection = isForward ? UIPageViewControllerNavigationDirection.Forward : UIPageViewControllerNavigationDirection.Reverse;
                 var firstViewController = CreateViewController(position);
 
-                pageController.SetViewControllers(new[] { firstViewController }, navDirection, Element.AnimateTransition, s =>
+                pageController.SetViewControllers(new[] { firstViewController }, navDirection, _control.AnimateTransition, s =>
                 {
                     SetArrowsVisibility();
                     SetIndicatorsCurrentPage();
@@ -1250,17 +1238,17 @@ namespace CarouselView.iOS
                 }
                 else
                 {
-                    var selector = Element.ItemTemplate as DataTemplateSelector;
+                    var selector = _control.ItemTemplate as DataTemplateSelector;
                     if (selector != null)
                     {
-                        formsView = (View)selector.SelectTemplate(bindingContext, Element).CreateContent();
+                        formsView = (View)selector.SelectTemplate(bindingContext, _control).CreateContent();
                     }
                     else
                     {
                         // So ItemsSource can be ViewModels
-                        if (Element.ItemTemplate != null)
+                        if (_control.ItemTemplate != null)
                         {
-                            formsView = (View)Element.ItemTemplate.CreateContent();
+                            formsView = (View)_control.ItemTemplate.CreateContent();
                         }
                         else
                         {
@@ -1276,11 +1264,11 @@ namespace CarouselView.iOS
             }
 
             // HeightRequest fix
-            formsView.Parent = this.Element;
-            this.Element.AddItemView(index, formsView);
+            formsView.Parent = _control;
+            _control.AddItemView(index, formsView);
 
-            var rect = new CGRect(Element.X, Element.Y, ElementWidth, ElementHeight);
-            var nativeConverted = formsView.ToiOS(rect);
+            var rect = new CGRect(_control.X, _control.Y, ElementWidth, ElementHeight);
+            var nativeConverted = formsView.ToiOS(rect, _mauiContext);
 
             // TODO: Add tap gesture if any in the forms view
 
@@ -1354,7 +1342,7 @@ namespace CarouselView.iOS
 			}
 		}
 
-		protected override void Dispose(bool disposing)
+		public void Dispose(bool disposing)
 		{
 			if (disposing && !_disposed)
 			{
@@ -1393,12 +1381,13 @@ namespace CarouselView.iOS
                     scrollView = null;
                 }
 
-                if (Element != null)
+                if (_control != null)
 				{
-					Element.SizeChanged -= Element_SizeChanged;
-                    if (Element.ItemsSource != null && Element.ItemsSource is INotifyCollectionChanged)
+                    _control.PropertyChanged -= OnElementPropertyChanged;
+                    _control.SizeChanged -= OnElementSizeChanged;
+                    if (_control.ItemsSource != null && _control.ItemsSource is INotifyCollectionChanged)
                     {
-                        ((INotifyCollectionChanged)Element.ItemsSource).CollectionChanged -= ItemsSource_CollectionChanged;
+                        ((INotifyCollectionChanged)_control.ItemsSource).CollectionChanged -= ItemsSource_CollectionChanged;
                     }
                     RemoveAutoplayBehavior();
                 }
@@ -1406,16 +1395,6 @@ namespace CarouselView.iOS
 				Source = null;
 
 				_disposed = true;
-			}
-
-			try
-			{
-				base.Dispose(disposing);
-			}
-			catch (Exception ex)
-			{
-				Console.WriteLine(ex.Message);
-				return;
 			}
 		}
 

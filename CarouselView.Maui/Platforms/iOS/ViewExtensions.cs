@@ -1,29 +1,25 @@
-﻿using UIKit;
-using CoreGraphics;
-using Microsoft.Maui.Controls.Compatibility.Platform.iOS;
-using Platform = Microsoft.Maui.Controls.Compatibility.Platform.iOS.Platform;
+﻿using CoreGraphics;
+using Microsoft.Maui;
+using Microsoft.Maui.Platform;
+using UIKit;
 
 namespace CarouselView.iOS
 {
     public static class ViewExtensions
     {
-        public static UIView ToiOS(this View view, CGRect size)
+        public static UIView? ToiOS(this View view, CGRect size, IMauiContext mauiContext)
         {
-			if (Platform.GetRenderer(view) == null)
-				Platform.SetRenderer(view, Platform.CreateRenderer(view));
-            
-			var vRenderer = Platform.GetRenderer(view);
+            var viewHandler = view.ToHandler(mauiContext);
+            var nativeView = viewHandler?.PlatformView as UIView;
+            if (nativeView != null)
+            {
+                nativeView.Frame = size;
+                nativeView.AutoresizingMask = UIViewAutoresizing.All;
+                nativeView.ContentMode = UIViewContentMode.ScaleToFill;
+                nativeView.SetNeedsLayout();
 
-			vRenderer.NativeView.Frame = size;
-
-			vRenderer.NativeView.AutoresizingMask = UIViewAutoresizing.All;
-			vRenderer.NativeView.ContentMode = UIViewContentMode.ScaleToFill;
-
-			vRenderer.Element?.Layout (size.ToRectangle());
-
-			var nativeView = vRenderer.NativeView;
-
-            nativeView.SetNeedsLayout ();
+                view.Layout(size.ToRectangle());
+            }
 
             return nativeView;
         }

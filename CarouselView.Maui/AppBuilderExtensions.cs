@@ -1,5 +1,4 @@
 using CarouselView.Abstractions;
-using Microsoft.Maui.Controls.Compatibility.Hosting;
 using Microsoft.Maui.LifecycleEvents;
 
 namespace CarouselView;
@@ -10,7 +9,6 @@ public static class AppBuilderExtensions
     {
 
         builder
-            .UseMauiCompatibility()
             .ConfigureLifecycleEvents(lifecycle =>
             {
 #if ANDROID
@@ -37,9 +35,9 @@ public static class AppBuilderExtensions
             }).ConfigureMauiHandlers(handlers =>
             {
 #if ANDROID
-                handlers.AddHandler(typeof(CarouselViewControl), typeof(CarouselView.Droid.CarouselViewRenderer));
+                handlers.AddHandler(typeof(CarouselViewControl), typeof(CarouselView.Droid.CarouselViewHandler));
 #elif IOS
-                handlers.AddHandler(typeof(CarouselViewControl), typeof(CarouselView.iOS.CarouselViewRenderer));
+                handlers.AddHandler(typeof(CarouselViewControl), typeof(CarouselView.iOS.CarouselViewHandler));
 #elif MACCATALYST
                 
 #elif WINDOWS

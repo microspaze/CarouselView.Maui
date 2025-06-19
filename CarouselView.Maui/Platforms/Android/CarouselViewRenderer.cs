@@ -4,13 +4,8 @@ using Android.Content;
 using Android.Runtime;
 using AndroidX.ViewPager.Widget;
 using CarouselView.Abstractions;
-using CarouselView.Droid;
 using Com.ViewPagerIndicator;
-using Microsoft.Maui.Controls.Compatibility.Platform.Android;
-using Microsoft.Maui.Controls.Platform;
-using Microsoft.Maui.Controls.PlatformConfiguration;
 using Microsoft.Maui.Platform;
-using Platform = Microsoft.Maui.Controls.Compatibility.Platform.Android.Platform;
 using View = Microsoft.Maui.Controls.View;
 
 /*
@@ -32,9 +27,11 @@ namespace CarouselView.Droid
     /// <summary>
     /// CarouselView Renderer
     /// </summary>
-    public class CarouselViewRenderer : Microsoft.Maui.Controls.Handlers.Compatibility.ViewRenderer<CarouselViewControl, Android.Views.View>
+    public class CarouselViewRenderer
     {
         Context _context;
+        CarouselViewControl _control;
+        IMauiContext? _mauiContext => Application.Current?.Windows[0]?.Handler?.MauiContext;
 
         bool carouselOrientationChanged;
 
@@ -59,7 +56,7 @@ namespace CarouselView.Droid
         bool canSetLayout = true;
         readonly SoftKeyboardService keyboardService;
 
-        public CarouselViewRenderer(Context context) : base(context)
+        public CarouselViewRenderer(Context context)
         {
             _context = context;
 
@@ -68,6 +65,34 @@ namespace CarouselView.Droid
             if (activity != null)
             {
                 keyboardService = new SoftKeyboardService(activity);
+            }
+        }
+
+        public void SetControl(CarouselViewControl control)
+        {
+            if (_control == null)
+            {
+                // Instantiate the native control and assign it to the Control property with
+                // the SetNativeControl method (called when Height BP changes)
+                carouselOrientationChanged = true;
+            }
+
+            _control = control;
+            _control.PropertyChanged += OnElementPropertyChanged;
+            _control.SizeChanged += OnElementSizeChanged;
+            _control.Loaded += OnElementLoaded;
+
+            // Configure the control and subscribe to event handlers
+            if (_control.ItemsSource != null && _control.ItemsSource is INotifyCollectionChanged)
+            {
+                ((INotifyCollectionChanged)_control.ItemsSource).CollectionChanged += ItemsSource_CollectionChanged;
+            }
+
+            // KeyboardService code
+            if (keyboardService != null)
+            {
+                Application.Current.MainPage.SizeChanged += MainPage_SizeChanged;
+                keyboardService.VisibilityChanged += KeyboardService_VisibilityChanged;
             }
         }
 
@@ -91,63 +116,6 @@ namespace CarouselView.Droid
             return null;
         }
 
-        protected override void OnElementChanged(ElementChangedEventArgs<CarouselViewControl> e)
-        {
-            base.OnElementChanged(e);
-
-            if (Control == null)
-            {
-                // Instantiate the native control and assign it to the Control property with
-                // the SetNativeControl method (called when Height BP changes)
-                carouselOrientationChanged = true;
-            }
-
-            if (e.OldElement != null)
-            {
-                // Unsubscribe from event handlers and cleanup any resources
-
-                if (Element == null) return;
-
-                Element.SizeChanged -= Element_SizeChanged;
-                Element.Loaded -= OnElementLoaded;
-                if (Element.ItemsSource != null && Element.ItemsSource is INotifyCollectionChanged)
-                {
-                    ((INotifyCollectionChanged)Element.ItemsSource).CollectionChanged -= ItemsSource_CollectionChanged;
-                }
-                RemoveAutoplayBehavior();
-
-                // KeyboardService code
-                Application.Current.MainPage.SizeChanged -= MainPage_SizeChanged;
-
-                // Nullreference exception on external display #409
-                if (keyboardService != null)
-                {
-                    keyboardService.VisibilityChanged -= KeyboardService_VisibilityChanged;
-                }
-            }
-
-            if (e.NewElement != null && Element != null)
-            {
-                Element.SizeChanged += Element_SizeChanged;
-                Element.Loaded += OnElementLoaded;
-
-                // Configure the control and subscribe to event handlers
-                if (Element.ItemsSource != null && Element.ItemsSource is INotifyCollectionChanged)
-                {
-                    ((INotifyCollectionChanged)Element.ItemsSource).CollectionChanged += ItemsSource_CollectionChanged;
-                }
-
-                // KeyboardService code
-                Application.Current.MainPage.SizeChanged += MainPage_SizeChanged;
-
-                // Nullreference exception on external display #409
-                if (keyboardService != null)
-                {
-                    keyboardService.VisibilityChanged += KeyboardService_VisibilityChanged;
-                }
-            }
-        }
-
         private async void OnElementLoaded(object? sender, EventArgs e)
         {
             //[Android] Fix CarouselView's content not showing when app's first startup bug
@@ -157,18 +125,18 @@ namespace CarouselView.Droid
 
         private void AddAutoplayBehavior()
         {
-            if (Element.InfiniteScrolling && Element.AutoplayInterval > 0 && Element.ItemsSource?.GetCount() > 1)
+            if (_control.InfiniteScrolling && _control.AutoplayInterval > 0 && _control.ItemsSource?.GetCount() > 1)
             {
-                Element.Behaviors.Add(new AutoplayBehavior() { Delay = Element.AutoplayInterval * 1000 });
+                _control.Behaviors.Add(new AutoplayBehavior() { Delay = _control.AutoplayInterval * 1000 });
             }
         }
 
         private void RemoveAutoplayBehavior()
         {
-            if (Element.Behaviors.FirstOrDefault((arg) => arg is AutoplayBehavior) is AutoplayBehavior autoplay)
+            if (_control.Behaviors.FirstOrDefault((arg) => arg is AutoplayBehavior) is AutoplayBehavior autoplay)
             {
                 autoplay.StopTimer();
-                Element.Behaviors.Remove(autoplay);
+                _control.Behaviors.Remove(autoplay);
             }
         }
 
@@ -177,7 +145,7 @@ namespace CarouselView.Droid
             // Fix for #168 Android NullReferenceException
             var Source = ((PageAdapter)viewPager?.Adapter)?.Source;
 
-            if (Element == null || viewPager == null || viewPager?.Adapter == null || Source == null) return;
+            if (_control == null || viewPager == null || viewPager?.Adapter == null || Source == null) return;
 
             RemoveAutoplayBehavior();
 
@@ -186,13 +154,13 @@ namespace CarouselView.Droid
             if (e.Action == NotifyCollectionChangedAction.Add)
             {
                 // NEW
-                if (Element.InfiniteScrolling)
+                if (_control.InfiniteScrolling)
                 {
                     ResetAdapter();
                 }
                 else
                 {
-                    var newItem = Element?.ItemsSource?.GetItem(e.NewStartingIndex);
+                    var newItem = _control?.ItemsSource?.GetItem(e.NewStartingIndex);
                     InsertPage(newItem, e.NewStartingIndex);
                 }
             }
@@ -202,7 +170,7 @@ namespace CarouselView.Droid
             if (e.Action == NotifyCollectionChangedAction.Remove)
             {
                 // NEW: if at least one item in original list then 2 items and dummies in the Source
-                if (Element.InfiniteScrolling && Element?.ItemsSource?.GetCount() >= 1)
+                if (_control.InfiniteScrolling && _control?.ItemsSource?.GetCount() >= 1)
                 {
                     await RemovePageInfinite(e.OldStartingIndex);
                 }
@@ -218,14 +186,14 @@ namespace CarouselView.Droid
             if (e.Action == NotifyCollectionChangedAction.Move)
             {
                 // At least to items are needed to use Move
-                if (Element?.ItemsSource?.GetCount() == 1) return;
+                if (_control?.ItemsSource?.GetCount() == 1) return;
 
                 isChangingPosition = true;
-                Element.Position = e.NewStartingIndex;
+                _control.Position = e.NewStartingIndex;
                 isChangingPosition = false;
 
                 // NEW 
-                if (Element.InfiniteScrolling)
+                if (_control.InfiniteScrolling)
                 {
                     ResetAdapter();
                 }
@@ -248,7 +216,7 @@ namespace CarouselView.Droid
             if (e.Action == NotifyCollectionChangedAction.Replace)
             {
 				// NEW: at least two items are needed to use Replace
-                if (Element.InfiniteScrolling)
+                if (_control.InfiniteScrolling)
                 {
                     ResetAdapter();
                 }
@@ -273,21 +241,21 @@ namespace CarouselView.Droid
         void SendPositionSelected()
         {
             isChangingSelectedItem = true;
-            Element.SelectedItem = Element.ItemsSource?.GetItem(Element.Position);
+            _control.SelectedItem = _control.ItemsSource?.GetItem(_control.Position);
             isChangingSelectedItem = false;
-            Element.SendPositionSelected();
-            Element.PositionSelectedCommand?.Execute(new PositionSelectedEventArgs() { NewValue = Element.Position });
+            _control.SendPositionSelected();
+            _control.PositionSelectedCommand?.Execute(new PositionSelectedEventArgs() { NewValue = _control.Position });
         }
 
         void ResetAdapter()
         {
             var activity = FindActivity(_context);
-            viewPager.Adapter = new PageAdapter(Element, activity);
+            viewPager.Adapter = new PageAdapter(_control, activity);
             SetArrowsVisibility();
             indicators?.SetViewPager(viewPager);
             if (indicators != null)
             {
-                indicators.mSnapPage = Element.InfiniteScrolling && Element?.ItemsSource?.GetCount() > 1 ? Element.Position + 1 : Element.Position;
+                indicators.mSnapPage = _control.InfiniteScrolling && _control?.ItemsSource?.GetCount() > 1 ? _control.Position + 1 : _control.Position;
                 viewPager.SetCurrentItem(indicators.mSnapPage, false);
             }
         }
@@ -316,9 +284,9 @@ namespace CarouselView.Droid
             }
         }
 
-        void Element_SizeChanged(object sender, EventArgs e)
+        void OnElementSizeChanged(object? sender, EventArgs e)
         {
-            if (Element == null) return;
+            if (_control == null) return;
 
             // KeyboardService code
             // To avoid page recreation caused by entry focus #136 (fix)
@@ -328,8 +296,8 @@ namespace CarouselView.Droid
                 return;
             }
 
-            var rect = this.Element.Bounds;
-            if (rect.Height > 0 || this.Element.HeightRequest > 0)
+            var rect = this._control.Bounds;
+            if (rect.Height > 0 || this._control.HeightRequest > 0)
             {
                 bool setNativeView = false;
                 var deviceOrientation = GetOrientation();
@@ -368,33 +336,33 @@ namespace CarouselView.Droid
 
         // Fix #129 CarouselViewControl not rendered when loading a page from memory bug
         // Fix #157 CarouselView Binding breaks when returning to Page bug duplicate
-        protected override void OnAttachedToWindow()
+        protected void OnAttachedToWindow()
         {
-            if (Control == null)
+            if (_control == null)
             {
-                Element_SizeChanged(Element, null);
+                OnElementSizeChanged(_control, null);
             }
 
-            if (Element.Parent is Microsoft.Maui.Controls.ScrollView)
+            if (_control.Parent is Microsoft.Maui.Controls.ScrollView)
             {
                 ResetAdapter();
             }
 
-            base.OnAttachedToWindow();
+            //base.OnAttachedToWindow();
         }
 
-        protected override void OnElementPropertyChanged(object sender, PropertyChangedEventArgs e)
+        protected void OnElementPropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
-            base.OnElementPropertyChanged(sender, e);
+            //base.OnElementPropertyChanged(sender, e);
 
-            if (Element == null || viewPager == null) return;
+            if (_control == null || viewPager == null) return;
 
-            var rect = this.Element.Bounds;
+            var rect = this._control.Bounds;
 
             switch (e.PropertyName)
             {
                 case "IsVisible":
-                    nativeView.Visibility = Element.IsVisible ? Android.Views.ViewStates.Visible : Android.Views.ViewStates.Invisible;
+                    nativeView.Visibility = _control.IsVisible ? Android.Views.ViewStates.Visible : Android.Views.ViewStates.Invisible;
                     break;
                 case "Y":
                     // fix for a scenario where the carousel does not show up in Android app #329
@@ -411,19 +379,19 @@ namespace CarouselView.Droid
                     AddAutoplayBehavior();
                     break;
                 case "BackgroundColor":
-                    viewPager.SetBackgroundColor(Element.BackgroundColor.ToPlatform(Colors.Transparent));
+                    viewPager.SetBackgroundColor(_control.BackgroundColor.ToPlatform(Colors.Transparent));
                     break;
                 case "IsSwipeEnabled":
                     SetIsSwipeEnabled();
                     break;
                 case "IndicatorsTintColor":
-                    indicators?.SetFillColor(Element.IndicatorsTintColor.ToPlatform(Colors.Transparent));
+                    indicators?.SetFillColor(_control.IndicatorsTintColor.ToPlatform(Colors.Transparent));
                     break;
                 case "CurrentPageIndicatorTintColor":
-                    indicators?.SetPageColor(Element.CurrentPageIndicatorTintColor.ToPlatform(Colors.Transparent));
+                    indicators?.SetPageColor(_control.CurrentPageIndicatorTintColor.ToPlatform(Colors.Transparent));
                     break;
                 case "IndicatorsShape":
-                    indicators?.SetStyle((int)Element.IndicatorsShape);
+                    indicators?.SetStyle((int)_control.IndicatorsShape);
                     break;
                 case "ShowIndicators":
                     SetIndicatorsVisibility();
@@ -433,9 +401,9 @@ namespace CarouselView.Droid
                     SetPosition();
                     ResetAdapter();
                     SendPositionSelected();
-                    if (Element.ItemsSource != null && Element.ItemsSource is INotifyCollectionChanged)
+                    if (_control.ItemsSource != null && _control.ItemsSource is INotifyCollectionChanged)
                     {
-                        ((INotifyCollectionChanged)Element.ItemsSource).CollectionChanged += ItemsSource_CollectionChanged;
+                        ((INotifyCollectionChanged)_control.ItemsSource).CollectionChanged += ItemsSource_CollectionChanged;
                     }
                     AddAutoplayBehavior();
                     break;
@@ -456,7 +424,7 @@ namespace CarouselView.Droid
                     if (!isChangingSelectedItem)
                     {
                         // NEW
-                        Element.Position = Element.ItemsSource.GetList().IndexOf(Element.SelectedItem);
+                        _control.Position = _control.ItemsSource.GetList().IndexOf(_control.SelectedItem);
                     }
                     break;
                 case "ShowArrows":
@@ -464,20 +432,20 @@ namespace CarouselView.Droid
                     break;
                 case "ArrowsBackgroundColor":
                     if (prevBtn == null || nextBtn == null) return;
-                    prevBtn.SetBackgroundColor(Element.ArrowsBackgroundColor.ToPlatform(Colors.Transparent));
-                    nextBtn.SetBackgroundColor(Element.ArrowsBackgroundColor.ToPlatform(Colors.Transparent));
+                    prevBtn.SetBackgroundColor(_control.ArrowsBackgroundColor.ToPlatform(Colors.Transparent));
+                    nextBtn.SetBackgroundColor(_control.ArrowsBackgroundColor.ToPlatform(Colors.Transparent));
                     break;
                 case "ArrowsTintColor":
                     if (prevBtn == null || nextBtn == null) return;
                     var prevArrow = nativeView.FindViewById<Android.Widget.ImageView>(Resource.Id.prevArrow);
-                    prevArrow.SetColorFilter(Element.ArrowsTintColor.ToPlatform(Colors.Transparent));
+                    prevArrow.SetColorFilter(_control.ArrowsTintColor.ToPlatform(Colors.Transparent));
                     var nextArrow = nativeView.FindViewById<Android.Widget.ImageView>(Resource.Id.nextArrow);
-                    nextArrow.SetColorFilter(Element.ArrowsTintColor.ToPlatform(Colors.Transparent));
+                    nextArrow.SetColorFilter(_control.ArrowsTintColor.ToPlatform(Colors.Transparent));
                     break;
                 case "ArrowsTransparency":
                     if (prevBtn == null || nextBtn == null) return;
-                    prevBtn.Alpha = Element.ArrowsTransparency;
-                    nextBtn.Alpha = Element.ArrowsTransparency;
+                    prevBtn.Alpha = _control.ArrowsTransparency;
+                    nextBtn.Alpha = _control.ArrowsTransparency;
                     break;
                 case "InfiniteScrolling":
                     RemoveAutoplayBehavior();
@@ -534,15 +502,15 @@ namespace CarouselView.Droid
             {
                 // e.PositionOffset is the %
                 // if e.Position < currentPosition, it is scrolling to the left
-                if (e.Position < Element.Position)
+                if (e.Position < _control.Position)
                 {
                     currentPercentCompleted = Math.Floor((1 - e.PositionOffset) * 100);
-                    direction = Element.Orientation == CarouselViewOrientation.Horizontal ? ScrollDirection.Left : ScrollDirection.Up;
+                    direction = _control.Orientation == CarouselViewOrientation.Horizontal ? ScrollDirection.Left : ScrollDirection.Up;
                 }
                 else
                 {
                     currentPercentCompleted = Math.Floor(e.PositionOffset * 100);
-                    direction = Element.Orientation == CarouselViewOrientation.Horizontal ? ScrollDirection.Right : ScrollDirection.Down;
+                    direction = _control.Orientation == CarouselViewOrientation.Horizontal ? ScrollDirection.Right : ScrollDirection.Down;
                 }
             }
 
@@ -556,8 +524,8 @@ namespace CarouselView.Droid
                     reportedPercentCompleted = -reportedPercentCompleted;
                 }
 
-                Element.SendScrolled(reportedPercentCompleted, direction);
-                Element.ScrolledCommand?.Execute(new Abstractions.ScrolledEventArgs()
+                _control.SendScrolled(reportedPercentCompleted, direction);
+                _control.ScrolledCommand?.Execute(new Abstractions.ScrolledEventArgs()
                 {
                     NewValue = reportedPercentCompleted,
                     Direction = direction
@@ -577,7 +545,7 @@ namespace CarouselView.Droid
         {
             // To avoid calling SetCurrentPage
             isChangingPosition = true;
-            Element.Position = Element.InfiniteScrolling ? e.Position - 1 : e.Position;
+            _control.Position = _control.InfiniteScrolling ? e.Position - 1 : e.Position;
             isChangingPosition = false;
         }
 
@@ -598,7 +566,7 @@ namespace CarouselView.Droid
                 // NEW: silently and immediately flip the item to the first / last.
                 int itemCount = viewPager.Adapter.Count;
 
-                if (Element.InfiniteScrolling && itemCount > 1)
+                if (_control.InfiniteScrolling && itemCount > 1)
                 {
                     int index = viewPager.CurrentItem;
 
@@ -612,7 +580,7 @@ namespace CarouselView.Droid
                     }
 
                     isChangingPosition = true;
-                    Element.Position = viewPager.CurrentItem - 1;
+                    _control.Position = viewPager.CurrentItem - 1;
                     isChangingPosition = false;  
                 }
 
@@ -624,7 +592,7 @@ namespace CarouselView.Droid
 
         #endregion
 
-        void SetNativeView()
+        public Android.Views.View SetNativeView()
         {
             var activity = FindActivity(_context);
 
@@ -633,7 +601,7 @@ namespace CarouselView.Droid
                 var inflater = Android.Views.LayoutInflater.From(activity);
 
                 // Orientation BP
-                if (Element.Orientation == CarouselViewOrientation.Horizontal)
+                if (_control.Orientation == CarouselViewOrientation.Horizontal)
                 {
                     nativeView = inflater.Inflate(Resource.Layout.horizontal_viewpager, null);
                 }
@@ -645,7 +613,7 @@ namespace CarouselView.Droid
                 viewPager = nativeView.FindViewById<ViewPager>(Resource.Id.pager);
 
                 // HACK to avoid last page to be blank while infinite scrolling
-                if (Element.InfiniteScrolling && Element.Orientation == CarouselViewOrientation.Vertical)
+                if (_control.InfiniteScrolling && _control.Orientation == CarouselViewOrientation.Vertical)
                 {
                     viewPager.OffscreenPageLimit = 100;
                 }
@@ -653,20 +621,20 @@ namespace CarouselView.Droid
                 carouselOrientationChanged = false;
             }
 
-            viewPager.Adapter = new PageAdapter(Element, activity);
+            viewPager.Adapter = new PageAdapter(_control, activity);
 
             // NEW: set current item to +1 if infinite scrolling
-            var currentItem = Element.InfiniteScrolling && Element.ItemsSource.GetCount() > 1 ? Element.Position + 1 : Element.Position;
+            var currentItem = _control.InfiniteScrolling && _control.ItemsSource.GetCount() > 1 ? _control.Position + 1 : _control.Position;
 
             viewPager.SetCurrentItem(currentItem, false);
 
             // InterPageSpacing BP
-            var metrics = Resources.DisplayMetrics;
-            var interPageSpacing = Element.InterPageSpacing * metrics.Density;
+            var metrics = _context.Resources?.DisplayMetrics;
+            var interPageSpacing = metrics == null ? 0 : _control.InterPageSpacing * metrics.Density;
             viewPager.PageMargin = (int)interPageSpacing;
 
             // BackgroundColor BP
-            viewPager.SetBackgroundColor(Element.BackgroundColor.ToPlatform(Colors.Transparent));
+            viewPager.SetBackgroundColor(_control.BackgroundColor.ToPlatform(Colors.Transparent));
 
             viewPager.PageSelected += ViewPager_PageSelected;
             viewPager.PageScrollStateChanged += ViewPager_PageScrollStateChanged;
@@ -676,9 +644,7 @@ namespace CarouselView.Droid
             SetIsSwipeEnabled();
 
             // TapGestureRecognizer doesn't work when added to CarouselViewControl (Android) #66, #191, #200
-            ((IViewPager)viewPager)?.SetElement(Element);
-
-            SetNativeControl(nativeView);
+            ((IViewPager)viewPager)?.SetElement(_control);
 
             // ARROWS
             SetArrows();
@@ -689,77 +655,79 @@ namespace CarouselView.Droid
             SetIndicators();
 
             SetIndicatorsVisibility();
+
+            return nativeView;
         }
 
         void SetIsSwipeEnabled()
         {
-            ((IViewPager)viewPager)?.SetPagingEnabled(Element.IsSwipeEnabled);
+            ((IViewPager)viewPager)?.SetPagingEnabled(_control.IsSwipeEnabled);
         }
 
         void SetPosition()
         {
             isChangingPosition = true;
-            if (Element.ItemsSource != null)
+            if (_control.ItemsSource != null)
             {
-                if (Element.Position > Element.ItemsSource.GetCount() - 1)
+                if (_control.Position > _control.ItemsSource.GetCount() - 1)
                 {
-                    Element.Position = Element.ItemsSource.GetCount() - 1;
+                    _control.Position = _control.ItemsSource.GetCount() - 1;
                 }
-                if (Element.Position == -1)
+                if (_control.Position == -1)
                 {
-                    Element.Position = 0;
+                    _control.Position = 0;
                 }
             }
             else
             {
-                Element.Position = 0;
+                _control.Position = 0;
             }
             isChangingPosition = false;
 
             if (indicators != null)
             {
                 // NEW: set mSnapPage to +1 if infinite scrolling
-                indicators.mSnapPage = Element.InfiniteScrolling && Element.ItemsSource.GetCount() > 1 ? Element.Position + 1 : Element.Position;
+                indicators.mSnapPage = _control.InfiniteScrolling && _control.ItemsSource.GetCount() > 1 ? _control.Position + 1 : _control.Position;
             }
         }
 
         void SetArrows()
         {
-            if (Element.ShowArrows)
+            if (_control.ShowArrows)
             {
-                var w = Element.Orientation == CarouselViewOrientation.Horizontal ? Element.ArrowsSize + 3 : Element.ArrowsSize + 19;
-                var h = Element.Orientation == CarouselViewOrientation.Horizontal ? Element.ArrowsSize + 19 : Element.ArrowsSize + 3;
-                var metrics = Resources.DisplayMetrics;
-                var margin = (int)(Element.ArrowsParentMargin * metrics.Density);
+                var w = _control.Orientation == CarouselViewOrientation.Horizontal ? _control.ArrowsSize + 3 : _control.ArrowsSize + 19;
+                var h = _control.Orientation == CarouselViewOrientation.Horizontal ? _control.ArrowsSize + 19 : _control.ArrowsSize + 3;
+                var metrics = _context.Resources?.DisplayMetrics;
+                var margin = metrics == null ? 0 : (int)(_control.ArrowsParentMargin * metrics.Density);
 
                 if (prevBtn == null)
                 {
                     prevBtn = nativeView.FindViewById<Android.Widget.LinearLayout>(Resource.Id.prev);
-                    prevBtn.Alpha = Element.ArrowsTransparency;
+                    prevBtn.Alpha = _control.ArrowsTransparency;
 
-                    if (Element.PrevArrowTemplate == null)
+                    if (_control.PrevArrowTemplate == null)
                     {
-                        prevBtn.SetBackgroundColor(Element.ArrowsBackgroundColor.ToPlatform(Colors.Transparent));
+                        prevBtn.SetBackgroundColor(_control.ArrowsBackgroundColor.ToPlatform(Colors.Transparent));
                         
                         var prevArrow = nativeView.FindViewById<Android.Widget.ImageView>(Resource.Id.prevArrow);
-                        prevArrow.SetColorFilter(Element.ArrowsTintColor.ToPlatform(Colors.Transparent));
+                        prevArrow.SetColorFilter(_control.ArrowsTintColor.ToPlatform(Colors.Transparent));
 
                         var prevArrowLayoutParams = (Android.Widget.LinearLayout.LayoutParams)prevArrow.LayoutParameters;
-                        prevArrowLayoutParams.Width = (int)(Element.ArrowsSize * metrics.Density);
-                        prevArrowLayoutParams.Height = (int)(Element.ArrowsSize * metrics.Density);
+                        prevArrowLayoutParams.Width = (int)(_control.ArrowsSize * metrics.Density);
+                        prevArrowLayoutParams.Height = (int)(_control.ArrowsSize * metrics.Density);
                         prevArrow.LayoutParameters = prevArrowLayoutParams;
                     }
                     else
                     {
                         prevBtn.RemoveAllViews();
 
-                        var template = (Microsoft.Maui.Controls.View)Element.PrevArrowTemplate.CreateContent();
+                        var template = (Microsoft.Maui.Controls.View)_control.PrevArrowTemplate.CreateContent();
                         w = (int)template.WidthRequest;
                         h = (int)template.HeightRequest;
 
                         var rect = new Rect(0, 0, w, h);
                         var activity = FindActivity(_context);
-                        var prevArrow = template.ToAndroid(rect, activity);
+                        var prevArrow = template.ToAndroid(rect, _mauiContext);
 
                         prevBtn.AddView(prevArrow);
 
@@ -776,9 +744,9 @@ namespace CarouselView.Droid
                     prevBtnLayoutParams.Height = (int)(h * metrics.Density);
                     prevBtnLayoutParams.SetMargins(margin,margin,margin,margin);
 
-                    if (Element.Orientation == CarouselViewOrientation.Horizontal)
+                    if (_control.Orientation == CarouselViewOrientation.Horizontal)
                     {
-                        switch (Element.HorizontalArrowsPosition)
+                        switch (_control.HorizontalArrowsPosition)
                         {
                             case HorizontalArrowsPosition.Center:
                                 prevBtnLayoutParams.AddRule(Android.Widget.LayoutRules.CenterVertical);
@@ -793,7 +761,7 @@ namespace CarouselView.Droid
                     }
                     else
                     {
-                        switch (Element.VerticalArrowsPosition)
+                        switch (_control.VerticalArrowsPosition)
                         {
                             case VerticalArrowsPosition.Center:
                                 prevBtnLayoutParams.AddRule(Android.Widget.LayoutRules.CenterHorizontal);
@@ -813,31 +781,31 @@ namespace CarouselView.Droid
                 if (nextBtn == null)
                 {
                     nextBtn = nativeView.FindViewById<Android.Widget.LinearLayout>(Resource.Id.next);
-                    nextBtn.Alpha = Element.ArrowsTransparency;
+                    nextBtn.Alpha = _control.ArrowsTransparency;
 
-                    if (Element.NextArrowTemplate == null)
+                    if (_control.NextArrowTemplate == null)
                     {
-                        nextBtn.SetBackgroundColor(Element.ArrowsBackgroundColor.ToPlatform(Colors.Transparent));
+                        nextBtn.SetBackgroundColor(_control.ArrowsBackgroundColor.ToPlatform(Colors.Transparent));
                         
                         var nextArrow = nativeView.FindViewById<Android.Widget.ImageView>(Resource.Id.nextArrow);
-                        nextArrow.SetColorFilter(Element.ArrowsTintColor.ToPlatform(Colors.Transparent));
+                        nextArrow.SetColorFilter(_control.ArrowsTintColor.ToPlatform(Colors.Transparent));
 
                         var nextArrowLayoutParams = (Android.Widget.LinearLayout.LayoutParams)nextArrow.LayoutParameters;
-                        nextArrowLayoutParams.Width = (int)(Element.ArrowsSize * metrics.Density);
-                        nextArrowLayoutParams.Height = (int)(Element.ArrowsSize * metrics.Density);
+                        nextArrowLayoutParams.Width = (int)(_control.ArrowsSize * metrics.Density);
+                        nextArrowLayoutParams.Height = (int)(_control.ArrowsSize * metrics.Density);
                         nextArrow.LayoutParameters = nextArrowLayoutParams;
                     }
                     else
                     {
                         nextBtn.RemoveAllViews();
 
-                        var template = (Microsoft.Maui.Controls.View)Element.NextArrowTemplate.CreateContent();
+                        var template = (Microsoft.Maui.Controls.View)_control.NextArrowTemplate.CreateContent();
                         w = (int)template.WidthRequest;
                         h = (int)template.HeightRequest;
 
                         var rect = new Rect(0, 0, w, h);
                         var activity = FindActivity(_context);
-                        var nextArrow = template.ToAndroid(rect, activity);
+                        var nextArrow = template.ToAndroid(rect, _mauiContext);
 
                         nextBtn.AddView(nextArrow);
 
@@ -854,9 +822,9 @@ namespace CarouselView.Droid
                     nextBtnLayoutParams.Height = (int)(h * metrics.Density);
                     nextBtnLayoutParams.SetMargins(margin, margin, margin, margin);
 
-                    if (Element.Orientation == CarouselViewOrientation.Horizontal)
+                    if (_control.Orientation == CarouselViewOrientation.Horizontal)
                     {
-                        switch (Element.HorizontalArrowsPosition)
+                        switch (_control.HorizontalArrowsPosition)
                         {
                             case HorizontalArrowsPosition.Center:
                                 nextBtnLayoutParams.AddRule(Android.Widget.LayoutRules.CenterVertical);
@@ -871,7 +839,7 @@ namespace CarouselView.Droid
                     }
                     else
                     {
-                        switch (Element.VerticalArrowsPosition)
+                        switch (_control.VerticalArrowsPosition)
                         {
                             case VerticalArrowsPosition.Center:
                                 nextBtnLayoutParams.AddRule(Android.Widget.LayoutRules.CenterHorizontal);
@@ -902,12 +870,12 @@ namespace CarouselView.Droid
         {
             RemoveAutoplayBehavior();
 
-            if (Element.Position > 0)
+            if (_control.Position > 0)
             {
-                Element.Position--;
-                direction = Element.Orientation == CarouselViewOrientation.Horizontal ? ScrollDirection.Left : ScrollDirection.Up;
+                _control.Position--;
+                direction = _control.Orientation == CarouselViewOrientation.Horizontal ? ScrollDirection.Left : ScrollDirection.Up;
             }
-            else if (Element.InfiniteScrolling)
+            else if (_control.InfiniteScrolling)
             {
                 // NEW
                 viewPager.SetCurrentItem(0, true);
@@ -920,12 +888,12 @@ namespace CarouselView.Droid
         {
             RemoveAutoplayBehavior();
 
-            if (Element.Position < Element.ItemsSource?.GetCount() - 1)
+            if (_control.Position < _control.ItemsSource?.GetCount() - 1)
             {
-                Element.Position++;
-                direction = Element.Orientation == CarouselViewOrientation.Horizontal ? ScrollDirection.Right : ScrollDirection.Down;
+                _control.Position++;
+                direction = _control.Orientation == CarouselViewOrientation.Horizontal ? ScrollDirection.Right : ScrollDirection.Down;
             }
-            else if (Element.InfiniteScrolling)
+            else if (_control.InfiniteScrolling)
             {
                 // NEW
                 viewPager.SetCurrentItem(viewPager.Adapter.Count, true);
@@ -937,20 +905,20 @@ namespace CarouselView.Droid
         void SetArrowsVisibility()
         {
             if (prevBtn == null || nextBtn == null) return;
-            prevBtn.Visibility = (Element.Position == 0 && !Element.InfiniteScrolling) || (Element.InfiniteScrolling && Element.ItemsSource?.GetCount() < 2) || Element.ItemsSource?.GetCount() == 0 || Element.ItemsSource == null || !Element.ShowArrows ? Android.Views.ViewStates.Gone : Android.Views.ViewStates.Visible;
-            nextBtn.Visibility = (Element.Position == Element.ItemsSource?.GetCount() - 1 && !Element.InfiniteScrolling) || (Element.InfiniteScrolling && Element.ItemsSource?.GetCount() < 2) || Element.ItemsSource?.GetCount() == 0 || Element.ItemsSource == null || !Element.ShowArrows ? Android.Views.ViewStates.Gone : Android.Views.ViewStates.Visible;
+            prevBtn.Visibility = (_control.Position == 0 && !_control.InfiniteScrolling) || (_control.InfiniteScrolling && _control.ItemsSource?.GetCount() < 2) || _control.ItemsSource?.GetCount() == 0 || _control.ItemsSource == null || !_control.ShowArrows ? Android.Views.ViewStates.Gone : Android.Views.ViewStates.Visible;
+            nextBtn.Visibility = (_control.Position == _control.ItemsSource?.GetCount() - 1 && !_control.InfiniteScrolling) || (_control.InfiniteScrolling && _control.ItemsSource?.GetCount() < 2) || _control.ItemsSource?.GetCount() == 0 || _control.ItemsSource == null || !_control.ShowArrows ? Android.Views.ViewStates.Gone : Android.Views.ViewStates.Visible;
         }
 
         void SetIndicators()
         {
             var lp = (Android.Widget.RelativeLayout.LayoutParams)indicators.LayoutParameters;
 
-            if (Element.Orientation == CarouselViewOrientation.Horizontal)
+            if (_control.Orientation == CarouselViewOrientation.Horizontal)
             {
                 lp.AddRule(Android.Widget.LayoutRules.CenterHorizontal);
                 lp.Width = Android.Widget.RelativeLayout.LayoutParams.MatchParent;
 
-                switch (Element.HorizontalIndicatorsPosition)
+                switch (_control.HorizontalIndicatorsPosition)
                 {
                     case HorizontalIndicatorsPosition.Top:
                         lp.AddRule(Android.Widget.LayoutRules.AlignTop, Resource.Id.pager);
@@ -961,13 +929,13 @@ namespace CarouselView.Droid
                 }
             }
 
-            if (Element.Orientation == CarouselViewOrientation.Vertical)
+            if (_control.Orientation == CarouselViewOrientation.Vertical)
             {
                 indicators.SetOrientation(1);
                 lp.AddRule(Android.Widget.LayoutRules.CenterVertical);
                 lp.Height = Android.Widget.RelativeLayout.LayoutParams.MatchParent;
 
-                switch (Element.VerticalIndicatorsPosition)
+                switch (_control.VerticalIndicatorsPosition)
                 {
                     case VerticalIndicatorsPosition.Left:
                         lp.AddRule(Android.Widget.LayoutRules.AlignLeft, Resource.Id.pager);
@@ -983,20 +951,20 @@ namespace CarouselView.Droid
             SetPosition();
             indicators?.SetViewPager(viewPager);
             // IndicatorsTintColor BP
-            indicators?.SetFillColor(Element.IndicatorsTintColor.ToPlatform(Colors.Transparent));
+            indicators?.SetFillColor(_control.IndicatorsTintColor.ToPlatform(Colors.Transparent));
             // CurrentPageIndicatorTintColor BP
-            indicators?.SetPageColor(Element.CurrentPageIndicatorTintColor.ToPlatform(Colors.Transparent));
+            indicators?.SetPageColor(_control.CurrentPageIndicatorTintColor.ToPlatform(Colors.Transparent));
             // IndicatorsShape BP
-            indicators?.SetStyle((int)Element.IndicatorsShape); // Rounded or Squared
+            indicators?.SetStyle((int)_control.IndicatorsShape); // Rounded or Squared
 
-            indicators.SetInfiniteScrolling(Element.InfiniteScrolling);
+            indicators.SetInfiniteScrolling(_control.InfiniteScrolling);
 
             indicators.Visibility = Android.Views.ViewStates.Visible;
         }
 
         void SetIndicatorsVisibility()
         {
-            indicators.Visibility = Element.ShowIndicators ? Android.Views.ViewStates.Visible : Android.Views.ViewStates.Gone;
+            indicators.Visibility = _control.ShowIndicators ? Android.Views.ViewStates.Visible : Android.Views.ViewStates.Gone;
         }
 
         void InsertPage(object item, int position)
@@ -1004,7 +972,7 @@ namespace CarouselView.Droid
             // Fix for #168 Android NullReferenceException
             var Source = ((PageAdapter)viewPager?.Adapter)?.Source;
 
-            if (Element == null || viewPager == null || viewPager?.Adapter == null || Source == null) return;
+            if (_control == null || viewPager == null || viewPager?.Adapter == null || Source == null) return;
 
             Source.Insert(position, item);
 
@@ -1023,12 +991,12 @@ namespace CarouselView.Droid
 			// Fix for #168 Android NullReferenceException
 			var Source = ((PageAdapter)viewPager?.Adapter)?.Source;
 
-            if (Element == null || viewPager == null || viewPager?.Adapter == null || Source == null) return;
+            if (_control == null || viewPager == null || viewPager?.Adapter == null || Source == null) return;
 
             if (Source?.Count > 0)
             {
                 // To remove current page
-                if (position == Element.Position)
+                if (position == _control.Position)
                 {
                     var newPos = position - 1;
                     if (newPos == -1)
@@ -1037,22 +1005,22 @@ namespace CarouselView.Droid
                     if (position == 0 && Source?.Count > 1)
                     {
                         // Move to next page
-                        viewPager.SetCurrentItem(1, Element.AnimateTransition);
+                        viewPager.SetCurrentItem(1, _control.AnimateTransition);
                     }
                     else
                     {
                         // Move to previous page
-                        viewPager.SetCurrentItem(newPos, Element.AnimateTransition);
+                        viewPager.SetCurrentItem(newPos, _control.AnimateTransition);
                     }
 
                     // With a swipe transition
-                    if (Element.AnimateTransition)
+                    if (_control.AnimateTransition)
                     {
                         await Task.Delay(100);
                     }
 
                     isChangingPosition = true;
-                    Element.Position = newPos;
+                    _control.Position = newPos;
                     isChangingPosition = false;
                 }
 
@@ -1070,12 +1038,12 @@ namespace CarouselView.Droid
             // Fix for #168 Android NullReferenceException
             var Source = ((PageAdapter)viewPager?.Adapter)?.Source;
 
-            if (Element == null || viewPager == null || viewPager?.Adapter == null || Source == null) return;
+            if (_control == null || viewPager == null || viewPager?.Adapter == null || Source == null) return;
 
             if (Source?.Count > 0)
             {
                 // To remove current page
-                if (position == Element.Position)
+                if (position == _control.Position)
                 {
                     var newPos = position - 1;
                     if (newPos == -1)
@@ -1084,22 +1052,22 @@ namespace CarouselView.Droid
                     if (position == 0)
                     {
                         // Move to next page
-                        viewPager.SetCurrentItem(2, Element.AnimateTransition);
+                        viewPager.SetCurrentItem(2, _control.AnimateTransition);
                     }
                     else
                     {
                         // Move to previous page
-                        viewPager.SetCurrentItem(newPos + 1, Element.AnimateTransition);
+                        viewPager.SetCurrentItem(newPos + 1, _control.AnimateTransition);
                     }
 
                     // With a swipe transition
-                    if (Element.AnimateTransition)
+                    if (_control.AnimateTransition)
                     {
                         await Task.Delay(100);
                     }
 
                     isChangingPosition = true;
-                    Element.Position = newPos;
+                    _control.Position = newPos;
                     isChangingPosition = false;
                 }
 
@@ -1109,30 +1077,30 @@ namespace CarouselView.Droid
 
         void UpdateCurrentPage()
         {
-            if (Element == null)
+            if (_control == null)
             {
                 return;
             }
 
-            SetCurrentPage(Element.InfiniteScrolling && Element.ItemsSource.GetCount() > 1 ? Element.Position + 1 : Element.Position);
+            SetCurrentPage(_control.InfiniteScrolling && _control.ItemsSource.GetCount() > 1 ? _control.Position + 1 : _control.Position);
         }
 
         void SetCurrentPage(int position)
         {
-            if ((position < 0 || position > Element.ItemsSource?.GetCount() - 1) && !Element.InfiniteScrolling) return;
+            if ((position < 0 || position > _control.ItemsSource?.GetCount() - 1) && !_control.InfiniteScrolling) return;
 
-            if (Element == null || viewPager == null || Element.ItemsSource == null) return;
+            if (_control == null || viewPager == null || _control.ItemsSource == null) return;
 
             setCurrentPageCalled = true;
 
-            if (Element.ItemsSource?.GetCount() > 0)
+            if (_control.ItemsSource?.GetCount() > 0)
             {
-                viewPager.SetCurrentItem(position, Element.AnimateTransition);
+                viewPager.SetCurrentItem(position, _control.AnimateTransition);
 
                 SetArrowsVisibility();
 
                 // Invoke PositionSelected when AnimateTransition is disabled
-                if (!Element.AnimateTransition)
+                if (!_control.AnimateTransition)
                 {
                     SendPositionSelected();
                 }
@@ -1246,12 +1214,12 @@ namespace CarouselView.Droid
                 // NEW: if infinite scrolling, reset view renderer
                 if (Element.InfiniteScrolling || isViewSource)
                 {
-                    Platform.SetRenderer(formsView, null);
+                    //Platform.SetRenderer(formsView, null);
                 }
 
                 var size = new Rect(0, 0, Element.Width, Element.Height);
 
-                var nativeConverted = formsView.ToAndroid(size, context);
+                var nativeConverted = formsView.ToAndroid(size, Element.Handler.MauiContext);
                 nativeConverted.Tag = new Tag() { BindingContext = bindingContext }; //position;
 
                 // TODO: Add tap gesture if any in the forms view
@@ -1318,7 +1286,7 @@ namespace CarouselView.Droid
 
         #endregion
 
-        protected override void Dispose(bool disposing)
+        public void Dispose(bool disposing)
         {
             if (disposing && !_disposed)
             {
@@ -1358,27 +1326,26 @@ namespace CarouselView.Droid
 					viewPager = null;
 				}
 
-                if (Element != null)
+                if (_control != null)
                 {
-                    Element.SizeChanged -= Element_SizeChanged;
-                    if (Element.ItemsSource != null && Element.ItemsSource is INotifyCollectionChanged)
+                    _control.PropertyChanged -= OnElementPropertyChanged;
+                    _control.SizeChanged -= OnElementSizeChanged;
+                    _control.Loaded -= OnElementLoaded;
+                    if (_control.ItemsSource != null && _control.ItemsSource is INotifyCollectionChanged)
                     {
-                        ((INotifyCollectionChanged)Element.ItemsSource).CollectionChanged -= ItemsSource_CollectionChanged;
+                        ((INotifyCollectionChanged)_control.ItemsSource).CollectionChanged -= ItemsSource_CollectionChanged;
                     }
                     RemoveAutoplayBehavior();
+
+                    // KeyboardService code
+                    if (keyboardService != null)
+                    {
+                        Application.Current.MainPage.SizeChanged -= MainPage_SizeChanged;
+                        keyboardService.VisibilityChanged -= KeyboardService_VisibilityChanged;
+                    }
                 }
 
                 _disposed = true;
-            }
-
-            try
-            {
-                base.Dispose(disposing);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.Message);
-                return;
             }
         }
 

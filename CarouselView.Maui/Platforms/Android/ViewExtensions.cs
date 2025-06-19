@@ -1,8 +1,8 @@
-﻿using Android.Views;
-using Android.Content;
-using Android.Widget;
+﻿using Android.Content;
 using Android.Graphics;
-using Platform = Microsoft.Maui.Controls.Compatibility.Platform.Android.Platform;
+using Android.Views;
+using Android.Widget;
+using Microsoft.Maui.Platform;
 using Rect = Microsoft.Maui.Graphics.Rect;
 using View = Microsoft.Maui.Controls.View;
 
@@ -10,31 +10,14 @@ namespace CarouselView.Droid
 {
     public static class ViewExtensions
     {
-        public static Android.Views.View ToAndroid(this View view, Rect size, Context _context)
+        public static Android.Views.View ToAndroid(this View view, Rect size, IMauiContext mauiContext)
         {
-            // NullReferenceException during swiping #314 (ScrollView)
-            if (Platform.GetRenderer(view) == null || Platform.GetRenderer(view)?.Tracker == null || view is Microsoft.Maui.Controls.ListView)
-                Platform.SetRenderer(view, Platform.CreateRendererWithContext(view, _context));
-
-            var vRenderer = Platform.GetRenderer(view);
-            
-            var viewGroup = vRenderer.View;
-
-            vRenderer.Tracker?.UpdateLayout ();
+            var viewHandler = view.ToHandler(mauiContext);
+            var viewGroup = viewHandler.PlatformView as Android.Views.View;
             var layoutParams = new ViewGroup.LayoutParams (ViewGroup.LayoutParams.MatchParent, ViewGroup.LayoutParams.MatchParent);
             viewGroup.LayoutParameters = layoutParams;
             view.Layout(size);
             viewGroup.Layout(0, 0, (int)size.Width, (int)size.Height);
-
-            /*if (view is Xamarin.Forms.ListView)
-            {
-                var list = (Xamarin.Forms.ListView)view;
-                if (list.SelectedItem != null)
-                {
-                    list.ScrollTo(list.SelectedItem, ScrollToPosition.Center, false);
-                }
-            }*/
-
             return viewGroup;
         }
 

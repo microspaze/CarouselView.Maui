@@ -49,16 +49,18 @@ You can find all descriptions from the original repository
 
 
 ## License
-The MIT License (MIT) see [License file](LICENSE.md)
-
-
-## Thanks
-Thank JetBrains for providing DEV tools in developing. (Especially on MacOS)
-
-![avatar](CarouselView.Sample/Resources/Images/jetbrains_logo.png)
+The MIT License (MIT) see [License file](LICENSE)
 
 
 ## Release Notes
+
+## 1.1.0
+
+1.Add .NET 9 support.
+
+## 1.0.9
+
+1.Fix System.NullReferenceException in CarouselViewRenderer.UpdateCurrentPage #6 (Thanks PR by https://github.com/vector-perfect)
 
 ## 1.0.8
 
