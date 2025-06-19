@@ -7,7 +7,7 @@
 		<ImplicitUsings>enable</ImplicitUsings>
         <SkipValidateMauiImplicitPackageReferences>true</SkipValidateMauiImplicitPackageReferences>
 
-		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">14.2</SupportedOSPlatformVersion>
+		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">15.0</SupportedOSPlatformVersion>
 		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">21.0</SupportedOSPlatformVersion>
 		<RootNamespace>CarouselView</RootNamespace>
 		<Nullable>enable</Nullable>
@@ -17,7 +17,7 @@
 		<RepositoryUrl>https://github.com/microspaze/CarouselView.Maui</RepositoryUrl>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
         <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
-		<Version>1.0.9</Version>
+		<Version>1.1.0</Version>
 		<Configurations>Debug;Release</Configurations>
 		<Platforms>AnyCPU;Device;Simulator</Platforms>
 	</PropertyGroup>
