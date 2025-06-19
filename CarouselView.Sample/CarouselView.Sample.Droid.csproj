@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFrameworks>net8.0-android;</TargetFrameworks>
+		<TargetFrameworks>net8.0-android;net9.0-android;</TargetFrameworks>
 		<OutputType>Exe</OutputType>
 		<RootNamespace>CarouselView.Sample</RootNamespace>
 		<UseMaui>true</UseMaui>
@@ -19,7 +19,7 @@
 		<ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
 		<ApplicationVersion>1</ApplicationVersion>
 
-		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">11.0</SupportedOSPlatformVersion>
+		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">15.0</SupportedOSPlatformVersion>
 		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">21.0</SupportedOSPlatformVersion>
 		<AssemblyName>CarouselView.Sample</AssemblyName>
 	</PropertyGroup>
@@ -44,11 +44,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="7.0.0" />
-		<PackageReference Include="Microsoft.Maui.Controls" Version="8.0.3" />
-	</ItemGroup>
-
-	<ItemGroup>
+	  <PackageReference Include="Microsoft.Maui.Controls" Version="$(MauiVersion)" />
 	  <ProjectReference Include="..\CarouselView.Maui\CarouselView.Maui.csproj" />
 	</ItemGroup>
 
