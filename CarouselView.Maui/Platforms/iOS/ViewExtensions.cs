@@ -16,9 +16,10 @@ namespace CarouselView.iOS
                 nativeView.Frame = size;
                 nativeView.AutoresizingMask = UIViewAutoresizing.All;
                 nativeView.ContentMode = UIViewContentMode.ScaleToFill;
-                nativeView.SetNeedsLayout();
-
+                
                 view.Layout(size.ToRectangle());
+                
+                nativeView.SetNeedsLayout();
             }
 
             return nativeView;
