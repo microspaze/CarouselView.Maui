@@ -40,7 +40,7 @@
                 HorizontalOptions="Center" />
                 
             <cv:CarouselViewControl x:Name="CarouselHorizontal"
-                                    VerticalOptions="FillAndExpand"
+                                    HeightRequest="300"
                                     ItemsSource="{Binding MyItemsSource}"
                                     ShowArrows="False"
                                     ShowIndicators="True"
@@ -53,7 +53,10 @@
                                     SelectedItem="{Binding SelectedItem}">
                 <cv:CarouselViewControl.ItemTemplate>
                     <DataTemplate>
-                        <Image Source="{Binding .}" Aspect="Fill"/>
+                        <Grid>
+                            <Image Source="{Binding .}" HeightRequest="300" Aspect="Fill"/>
+                            <Button HorizontalOptions="Center" VerticalOptions="Center" Clicked="Button_Clicked" Text="Click Me"/>
+                        </Grid>
                     </DataTemplate>
                 </cv:CarouselViewControl.ItemTemplate>
             </cv:CarouselViewControl>

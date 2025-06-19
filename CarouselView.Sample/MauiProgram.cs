@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
-
+﻿
 namespace CarouselView.Sample
 {
     public static class MauiProgram
@@ -16,9 +15,8 @@ namespace CarouselView.Sample
                     fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");
                 });
 
-#if DEBUG
-		    builder.Logging.AddDebug();
-#endif
+            Routing.RegisterRoute("home", typeof(MainPage));
+            Routing.RegisterRoute("second", typeof(SecondPage));
 
             return builder.Build();
         }

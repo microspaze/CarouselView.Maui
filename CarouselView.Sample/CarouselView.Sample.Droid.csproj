@@ -32,9 +32,9 @@
 		<MauiSplashScreen Include="Resources\Splash\splash.svg" Color="#512BD4" BaseSize="128,128" />
 
 		<!-- Images -->
-		<MauiImage Include="Resources\Images\*.svg"/>
-		<MauiImage Include="Resources\Images\*.jpg"/>
-		<MauiImage Include="Resources\Images\*.png"/>
+		<MauiImage Include="Resources\Images\*.svg" />
+		<MauiImage Include="Resources\Images\*.jpg" />
+		<MauiImage Include="Resources\Images\*.png" />
 
 		<!-- Custom Fonts -->
 		<MauiFont Include="Resources\Fonts\*" />
@@ -71,5 +71,4 @@
 	<ItemGroup>
 	  <None Remove="Platforms\iOS\**" />
 	</ItemGroup>
-
 </Project>

@@ -8,6 +8,7 @@ namespace CarouselView.Sample
     public partial class MainPage : ContentPage
     {
         int count = 0;
+        MainViewModel viewModel;
 
         public MainPage()
         {
@@ -15,7 +16,8 @@ namespace CarouselView.Sample
 
             Title = "CarouselView";
 
-            BindingContext = new MainViewModel();
+            viewModel = new MainViewModel();
+            BindingContext = viewModel;
         }
 
         private void OnCounterClicked(object sender, EventArgs e)
@@ -34,6 +36,11 @@ namespace CarouselView.Sample
                 CounterBtn.Text = $"Clicked {count} times";
 
             SemanticScreenReader.Announce(CounterBtn.Text);
+        }
+
+        private async void Button_Clicked(object sender, EventArgs e)
+        {
+            await Shell.Current.GoToAsync($"second?imageSrc={viewModel.SelectedItem.ToString()}");
         }
     }
 

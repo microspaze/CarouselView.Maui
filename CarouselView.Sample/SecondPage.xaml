@@ -1,0 +1,11 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:cv="clr-namespace:CarouselView.Abstractions;assembly=CarouselView.Maui"
+             x:Class="CarouselView.Sample.SecondPage">
+    <StackLayout>
+        <Image Source="{Binding ImageSrc}" HeightRequest="300" Aspect="Fill"/>
+        <Button Margin="10" HorizontalOptions="Center" Text="Return Back" Clicked="Button_Clicked"/>
+    </StackLayout>
+</ContentPage>
+    
