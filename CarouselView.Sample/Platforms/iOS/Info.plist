@@ -31,6 +31,6 @@
 	<key>CFBundleIdentifier</key>
 	<string>com.i7chi.carouselview.sample</string>
 	<key>MinimumOSVersion</key>
-	<string>11.0</string>
+	<string>15.0</string>
 </dict>
 </plist>

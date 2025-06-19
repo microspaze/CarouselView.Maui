@@ -36,7 +36,9 @@ namespace CarouselView.iOS
     public class CarouselViewRenderer
     {
         bool carouselOrientationChanged;
-
+        
+        // The nativeView is generated dynamically, so can not be returned in CreatePlatformView()
+        UIView containerView;
         UIPageViewController pageController;
         UIPageControl pageControl;
         UIScrollView scrollView;
@@ -74,6 +76,8 @@ namespace CarouselView.iOS
             _control = control;
             _control.PropertyChanged += OnElementPropertyChanged;
             _control.SizeChanged += OnElementSizeChanged;
+            
+            containerView = new UIView();
 
             // Configure the control and subscribe to event handlers
             if (_control.ItemsSource != null && _control.ItemsSource is INotifyCollectionChanged)
@@ -228,9 +232,14 @@ namespace CarouselView.iOS
 
                 ElementWidth = rect.Width;
                 ElementHeight = rect.Height;
+                
+                containerView.Frame = rect;
+                containerView.AutoresizingMask = UIViewAutoresizing.All;
+                containerView.ContentMode = UIViewContentMode.ScaleToFill;
+                containerView.SetNeedsLayout();
+                
                 SetNativeView();
                 SendPositionSelected();
-
                 AddAutoplayBehavior();
             }
         }
@@ -559,6 +568,13 @@ namespace CarouselView.iOS
             }
 
             //SetNativeControl(pageController.View);
+            var contentView = pageController.View;
+            contentView.Frame = new CGRect(0, 0, containerView.Frame.Width, containerView.Frame.Height);
+            contentView.AutoresizingMask = UIViewAutoresizing.All;
+            contentView.ContentMode = UIViewContentMode.ScaleToFill;
+            contentView.SetNeedsLayout();
+            containerView.ClearSubviews();
+            containerView.AddSubview(contentView);
 
             // ARROWS
             SetArrows();
@@ -568,7 +584,7 @@ namespace CarouselView.iOS
 
             SetIndicatorsVisibility();
 
-            return pageController.View;
+            return containerView;
         }
 
         void SetIsSwipeEnabled()
