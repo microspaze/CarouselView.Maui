@@ -573,7 +573,10 @@ namespace CarouselView.iOS
             contentView.AutoresizingMask = UIViewAutoresizing.All;
             contentView.ContentMode = UIViewContentMode.ScaleToFill;
             contentView.SetNeedsLayout();
-            containerView.ClearSubviews();
+            if (containerView.Subviews != null)
+            {
+                containerView.ClearSubviews();
+            }
             containerView.AddSubview(contentView);
 
             // ARROWS

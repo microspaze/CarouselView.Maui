@@ -54,7 +54,7 @@ The MIT License (MIT) see [License file](LICENSE)
 
 ## Release Notes
 
-## 1.1.0
+## 1.1.1
 
 1.Add .NET 9 support.
 
