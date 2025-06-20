@@ -54,6 +54,10 @@ The MIT License (MIT) see [License file](LICENSE)
 
 ## Release Notes
 
+## 1.1.2
+
+1.Fix System.ObjectDisposedException: Cannot access a disposed object. Object name: 'Microsoft.Maui.Platform.LayoutView'. crash bug on iOS.
+
 ## 1.1.1
 
 1.Add .NET 9 support.

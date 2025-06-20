@@ -415,7 +415,7 @@ namespace CarouselView.iOS
         public UIView SetNativeView()
         {
             // Rotation bug(iOS) #115 Fix
-            CleanUpPageController();
+            //CleanUpPageController();
 
             if (carouselOrientationChanged)
             {
