@@ -93,7 +93,7 @@ namespace CarouselView.iOS
             //Reset safeAreaInsets to UIEdgeInsets.Zero
             if (pageController == null || pageController.View == null) { return; }
             var safeAreaInsets = pageController.View.SafeAreaInsets;
-            if (safeAreaInsets != UIEdgeInsets.Zero)
+            if (safeAreaInsets != UIEdgeInsets.Zero && Element.IgnoreSafeArea)
             {
                 pageController.AdditionalSafeAreaInsets = new UIEdgeInsets(-safeAreaInsets.Top, -safeAreaInsets.Left, -safeAreaInsets.Bottom, -safeAreaInsets.Right);
             }
