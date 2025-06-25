@@ -39,7 +39,7 @@ namespace CarouselView.iOS
         
         // The nativeView is generated dynamically, so can not be returned in CreatePlatformView()
         UIView containerView;
-        UIPageViewController pageController;
+        UIPageViewController? pageController = null;
         UIPageControl pageControl;
         UIScrollView scrollView;
 
@@ -66,17 +66,10 @@ namespace CarouselView.iOS
 
         public CarouselViewRenderer(CarouselViewControl control)
         {
-            if (_control == null)
-            {
-                // Instantiate the native control and assign it to the Control property with
-                // the SetNativeControl method (called when Height BP changes)
-                carouselOrientationChanged = true;
-            }
-
             _control = control;
             _control.PropertyChanged += OnElementPropertyChanged;
             _control.SizeChanged += OnElementSizeChanged;
-            
+
             containerView = new UIView();
 
             // Configure the control and subscribe to event handlers
@@ -282,11 +275,12 @@ namespace CarouselView.iOS
                     pageController.View.Hidden = !_control.IsVisible;
                     break;
                 case "Orientation":
-                    RemoveAutoplayBehavior();
                     carouselOrientationChanged = true;
+                    RemoveAutoplayBehavior();
                     SetNativeView();
                     SendPositionSelected();
                     AddAutoplayBehavior();
+                    carouselOrientationChanged = false;
                     break;
                 case "BackgroundColor":
                     pageController.View.BackgroundColor = _control.BackgroundColor?.ToPlatform();
@@ -394,7 +388,7 @@ namespace CarouselView.iOS
 
         #region adapter callbacks
 
-        void PageController_DidFinishAnimating(object sender, UIPageViewFinishedAnimationEventArgs e)
+        void PageController_DidFinishAnimating(object? sender, UIPageViewFinishedAnimationEventArgs e)
         {
             if (e.Completed)
             {
@@ -417,7 +411,7 @@ namespace CarouselView.iOS
             // Rotation bug(iOS) #115 Fix
             //CleanUpPageController();
 
-            if (carouselOrientationChanged)
+            if (pageController == null || carouselOrientationChanged)
             {
                 var interPageSpacing = (float)_control.InterPageSpacing;
 
@@ -509,10 +503,9 @@ namespace CarouselView.iOS
 
             foreach (var view in pageController?.View.Subviews)
             {
-                scrollView = view as UIScrollView;
-
-                if (scrollView != null)
+                if (scrollView == null && view is UIScrollView subScrollView)
                 {
+                    scrollView = subScrollView;
                     scrollView.Scrolled += Scroller_Scrolled;
                     scrollView.DraggingStarted += Scroller_DraggingStarted;
                     scrollView.DraggingEnded += Scroller_DraggingEnded;
@@ -558,26 +551,36 @@ namespace CarouselView.iOS
             // IsSwipeEnabled BP
             SetIsSwipeEnabled();
 
-            if (Source != null && Source?.Count > 0)
+            if (Source is { Count: > 0 } && pageController.ViewControllers.Length == 0)
             {
                 var firstViewController = CreateViewController(_control.Position);
 
-                pageController.SetViewControllers(new[] { firstViewController }, UIPageViewControllerNavigationDirection.Forward, false, s =>
+                pageController.SetViewControllers([firstViewController], UIPageViewControllerNavigationDirection.Forward, false, s =>
                 {
                 });
             }
 
-            //SetNativeControl(pageController.View);
-            var contentView = pageController.View;
-            contentView.Frame = new CGRect(0, 0, containerView.Frame.Width, containerView.Frame.Height);
-            contentView.AutoresizingMask = UIViewAutoresizing.All;
-            contentView.ContentMode = UIViewContentMode.ScaleToFill;
-            contentView.SetNeedsLayout();
-            if (containerView.Subviews != null)
+            if (containerView.Subviews.Length == 0 && containerView.Frame.Width > 0 && containerView.Frame.Height > 0)
             {
-                containerView.ClearSubviews();
+                // Reset safeAreaInsets to UIEdgeInsets.Zero
+                var safeAreaInsets = containerView.SafeAreaInsets;
+                if (safeAreaInsets != UIEdgeInsets.Zero)
+                {
+                    pageController.AdditionalSafeAreaInsets = new UIEdgeInsets(-safeAreaInsets.Top, -safeAreaInsets.Left, -safeAreaInsets.Bottom, -safeAreaInsets.Right);
+                }
+                
+                //SetNativeControl(pageController.View);
+                var contentView = pageController.View;
+                contentView.Frame = new CGRect(0, 0, containerView.Frame.Width, containerView.Frame.Height);
+                contentView.AutoresizingMask = UIViewAutoresizing.All;
+                contentView.ContentMode = UIViewContentMode.ScaleToFill;
+                contentView.SetNeedsLayout();
+                if (containerView.Subviews.Length > 0)
+                {
+                    containerView.ClearSubviews();
+                }
+                containerView.AddSubview(contentView);
             }
-            containerView.AddSubview(contentView);
 
             // ARROWS
             SetArrows();
@@ -603,12 +606,12 @@ namespace CarouselView.iOS
         nfloat prevPoint;
         ScrollDirection direction;
 
-        void Scroller_Scrolled(object sender, EventArgs e)
+        void Scroller_Scrolled(object? sender, EventArgs e)
         {
             // Added safety to help resolve issue #404
-            if (_control == null) return;
+            if (_control == null || sender == null) return;
 
-            //var scrollView = (UIScrollView)sender;
+            scrollView ??= (UIScrollView)sender;
             var point = scrollView.ContentOffset;
 
             double currentPercentCompleted;
