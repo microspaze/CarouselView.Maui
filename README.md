@@ -54,10 +54,11 @@ The MIT License (MIT) see [License file](LICENSE)
 
 ## Release Notes
 
-## 1.1.3
+## 1.1.4
 
 1.Fix System.ObjectDisposedException: Cannot access a disposed object. Object name: 'Microsoft.Maui.Platform.LayoutView'. crash bug on iOS.
-2.Fix CarouselView item auto hiding bugon iOS.
+2.Fix System.ObjectDisposedException: Cannot access a disposed object. Object name: 'Microsoft.Maui.Platform.ContentView' crash bug on iOS.
+3.Fix CarouselView item auto hiding bug on iOS.
 
 ## 1.1.1
 

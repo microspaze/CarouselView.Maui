@@ -18,7 +18,7 @@ namespace CarouselView.iOS
 		protected override void Dispose(bool disposing)
 		{
 			// because this runs in the finalizer thread and disposing is equal false
-            InvokeOnMainThread( () => {
+            /*InvokeOnMainThread( () => {
 
                 WillMoveToParentViewController(null);
 
@@ -34,7 +34,7 @@ namespace CarouselView.iOS
 				View = null;
 
                 RemoveFromParentViewController();
-			});
+			});*/
 
 			base.Dispose(disposing);
 		}
