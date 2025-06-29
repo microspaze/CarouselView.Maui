@@ -92,6 +92,7 @@ namespace CarouselView.Droid
                     positions[i] = i;
                 }
                 _control.ItemsSource = positions;
+                _control.UsePositionSource = true;
             }
             if (_control.ItemsSource != null && _control.ItemsSource is INotifyCollectionChanged)
             {
@@ -1223,7 +1224,7 @@ namespace CarouselView.Droid
                             }
                         }
 
-                        formsView.BindingContext = usePositionTemplate ? Element.BindingContext : bindingContext;
+                        formsView.BindingContext = usePositionTemplate && Element.UsePositionSource ? Element.BindingContext : bindingContext;
                     }
                 }
 

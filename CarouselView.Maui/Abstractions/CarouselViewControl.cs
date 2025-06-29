@@ -37,6 +37,8 @@ namespace CarouselView.Abstractions
 
         #region ItemPositionTemplates
 
+        public bool UsePositionSource { get; set; } = false;
+
         public List<CarouselViewPositionTemplate> ItemPositionTemplates { get; set; } = [];
 
         #endregion

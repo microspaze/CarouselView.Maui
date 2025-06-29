@@ -81,6 +81,7 @@ namespace CarouselView.iOS
                     positions[i] = i;
                 }
                 _control.ItemsSource = positions;
+                _control.UsePositionSource = true;
             }
             if (_control.ItemsSource != null && _control.ItemsSource is INotifyCollectionChanged)
             {
@@ -1301,7 +1302,7 @@ namespace CarouselView.iOS
                         }
                     }
 
-                    formsView.BindingContext = usePositionTemplate ? _control.BindingContext : bindingContext;
+                    formsView.BindingContext = usePositionTemplate && _control.UsePositionSource ? _control.BindingContext : bindingContext;
                 }
             }
 

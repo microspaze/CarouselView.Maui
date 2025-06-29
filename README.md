@@ -54,6 +54,10 @@ The MIT License (MIT) see [License file](LICENSE)
 
 ## Release Notes
 
+## 1.1.5
+
+1.Add new ItemViewCount & ItemPositionTemplates properties for dynamic item view template selection support. (Demo: CarouselView.Sample/MainPage.xaml )
+
 ## 1.1.4
 
 1.Fix System.ObjectDisposedException: Cannot access a disposed object. Object name: 'Microsoft.Maui.Platform.LayoutView'. crash bug on iOS.
