@@ -6,11 +6,11 @@ using System.Threading.Tasks;
 
 namespace CarouselView.Abstractions
 {
-    [ContentProperty("DataTemplate")]
+    [ContentProperty(nameof(Template))]
     public class CarouselViewPositionTemplate
     {
         public int Position { get; set; }
 
-        public DataTemplate? DataTemplate { get; set; }
+        public DataTemplate? Template { get; set; }
     }
 }

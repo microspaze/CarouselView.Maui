@@ -1201,20 +1201,20 @@ namespace CarouselView.Droid
                         else
                         {
                             // So ItemsSource can be ViewModels
-                            if (Element.ItemPositionTemplates != null)
+                            if (Element.ItemPositionTemplates is { Count: > 0 })
                             {
-                                var positionTemplate = Element.ItemPositionTemplates.FirstOrDefault(x => x.Position == index);
-                                if (positionTemplate != null && positionTemplate.DataTemplate != null)
+                                var positionTemplate = Element.ItemPositionTemplates.FirstOrDefault(x => x.Position == position);
+                                if (positionTemplate != null && positionTemplate.Template != null)
                                 {
-                                    formsView = (View)positionTemplate.DataTemplate.CreateContent();
+                                    formsView = (View)positionTemplate.Template.CreateContent();
                                     usePositionTemplate = true;
                                 }
                             }
-                            if (Element.ItemTemplate != null)
+                            if (formsView == null && Element.ItemTemplate != null)
                             {
                                 formsView = (View)Element.ItemTemplate.CreateContent();
                             }
-                            else
+                            else if (formsView == null)
                             {
                                 formsView = new Label()
                                 {

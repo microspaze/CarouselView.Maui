@@ -1277,21 +1277,22 @@ namespace CarouselView.iOS
                     }
                     else
                     {
-                        if (_control.ItemPositionTemplates != null)
+                        if (_control.ItemPositionTemplates is { Count: > 0 })
                         {
-                            var positionTemplate = _control.ItemPositionTemplates.FirstOrDefault(x => x.Position == index);
-                            if (positionTemplate != null && positionTemplate.DataTemplate != null)
+                            var positionTemplate =
+                                _control.ItemPositionTemplates.FirstOrDefault(x => x.Position == index);
+                            if (positionTemplate != null && positionTemplate.Template != null)
                             {
-                                formsView = (View)positionTemplate.DataTemplate.CreateContent();
+                                formsView = (View)positionTemplate.Template.CreateContent();
                                 usePositionTemplate = true;
                             }
                         }
-                        if (_control.ItemTemplate != null)
+                        if (formsView == null && _control.ItemTemplate != null)
                         {
                             // So ItemsSource can be ViewModels
                             formsView = (View)_control.ItemTemplate.CreateContent();
                         }
-                        else
+                        else if (formsView == null)
                         {
                             formsView = new Label()
                             {

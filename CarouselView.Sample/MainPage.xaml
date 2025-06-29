@@ -57,7 +57,7 @@
                         <DataTemplate>
                             <Grid>
                                 <Image Source="c1.jpg" HeightRequest="300" Aspect="Fill"/>
-                                <Button HorizontalOptions="Center" VerticalOptions="Center" Clicked="Button_Clicked" Text="Click Me"/>
+                                <Button HorizontalOptions="Center" VerticalOptions="Center" Clicked="Button_Clicked" Text="Click Me 1"/>
                             </Grid>
                         </DataTemplate>
                     </cv:CarouselViewPositionTemplate>
@@ -65,7 +65,7 @@
                         <DataTemplate x:DataType="local:MainViewModel">
                             <Grid>
                                 <Image Source="{Binding SecondImage}" HeightRequest="300" Aspect="Fill"/>
-                                <Button HorizontalOptions="Center" VerticalOptions="Center" Clicked="Button_Clicked" Text="Click Me"/>
+                                <Button HorizontalOptions="Center" VerticalOptions="Center" Clicked="Button_Clicked" Text="Click Me 2"/>
                             </Grid>
                         </DataTemplate>
                     </cv:CarouselViewPositionTemplate>
@@ -73,7 +73,7 @@
                         <DataTemplate x:DataType="local:MainViewModel">
                             <Grid>
                                 <Image Source="{Binding ThirdImage}" HeightRequest="300" Aspect="Fill"/>
-                                <Button HorizontalOptions="Center" VerticalOptions="Center" Clicked="Button_Clicked" Text="Click Me"/>
+                                <Button HorizontalOptions="Center" VerticalOptions="Center" Clicked="Button_Clicked" Text="Click Me 3"/>
                             </Grid>
                         </DataTemplate>
                     </cv:CarouselViewPositionTemplate>

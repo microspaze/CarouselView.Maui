@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 
 namespace CarouselView.Abstractions
@@ -33,6 +34,12 @@ namespace CarouselView.Abstractions
         }
 
         #endregion
+
+        #region ItemPositionTemplates
+
+        public List<CarouselViewPositionTemplate> ItemPositionTemplates { get; set; } = [];
+
+        #endregion
         
         public static readonly BindableProperty OrientationProperty = BindableProperty.Create("Orientation", typeof(CarouselViewOrientation), typeof(CarouselViewControl), CarouselViewOrientation.Horizontal);
 
@@ -57,14 +64,6 @@ namespace CarouselView.Abstractions
 			get { return (DataTemplate)GetValue(ItemTemplateProperty); }
 			set { SetValue(ItemTemplateProperty, value); }
 		}
-
-        public static readonly BindableProperty ItemPositionTemplatesProperty = BindableProperty.Create("ItemPositionTemplates", typeof(IEnumerable<CarouselViewPositionTemplate>), typeof(CarouselViewControl), null);
-
-        public IEnumerable<CarouselViewPositionTemplate> ItemPositionTemplates
-        {
-            get { return (IEnumerable<CarouselViewPositionTemplate>)GetValue(ItemTemplateProperty); }
-            set { SetValue(ItemTemplateProperty, value); }
-        }
 
         public static readonly BindableProperty ItemViewCountProperty = BindableProperty.Create("ItemViewCount", typeof(int), typeof(CarouselViewControl), 0, BindingMode.TwoWay);
 
