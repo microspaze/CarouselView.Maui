@@ -57,6 +57,10 @@ namespace CarouselView.Sample
                 "c3.jpg",
             };
 
+            FirstImage = "c1.jpg";
+            SecondImage = "c2.jpg";
+            ThirdImage = "c3.jpg";
+
             PositionSelectedCommand = new Command<PositionSelectedEventArgs>((e) =>
             {
                 Debug.WriteLine("Position " + e.NewValue + " selected.");
@@ -96,6 +100,27 @@ namespace CarouselView.Sample
             {
                 return _selectedItem;
             }
+        }
+
+        string _firstImage;
+        public string FirstImage
+        {
+            set { _firstImage = value; OnPropertyChanged(nameof(FirstImage)); }
+            get { return _firstImage; }
+        }
+
+        string _secondImage;
+        public string SecondImage
+        {
+            set { _secondImage = value; OnPropertyChanged(nameof(SecondImage)); }
+            get { return _secondImage; }
+        }
+
+        string _thirdImage;
+        public string ThirdImage
+        {
+            set { _thirdImage = value; OnPropertyChanged(nameof(ThirdImage)); }
+            get { return _thirdImage; }
         }
 
         public Command<PositionSelectedEventArgs> PositionSelectedCommand { protected set; get; }

@@ -58,7 +58,23 @@ namespace CarouselView.Abstractions
 			set { SetValue(ItemTemplateProperty, value); }
 		}
 
-		public static readonly BindableProperty PositionProperty = BindableProperty.Create("Position", typeof(int), typeof(CarouselViewControl), 0, BindingMode.TwoWay);
+        public static readonly BindableProperty ItemPositionTemplatesProperty = BindableProperty.Create("ItemPositionTemplates", typeof(IEnumerable<CarouselViewPositionTemplate>), typeof(CarouselViewControl), null);
+
+        public IEnumerable<CarouselViewPositionTemplate> ItemPositionTemplates
+        {
+            get { return (IEnumerable<CarouselViewPositionTemplate>)GetValue(ItemTemplateProperty); }
+            set { SetValue(ItemTemplateProperty, value); }
+        }
+
+        public static readonly BindableProperty ItemViewCountProperty = BindableProperty.Create("ItemViewCount", typeof(int), typeof(CarouselViewControl), 0, BindingMode.TwoWay);
+
+        public int ItemViewCount
+        {
+            get { return (int)GetValue(ItemViewCountProperty); }
+            set { SetValue(ItemViewCountProperty, value); }
+        }
+
+        public static readonly BindableProperty PositionProperty = BindableProperty.Create("Position", typeof(int), typeof(CarouselViewControl), 0, BindingMode.TwoWay);
 
 		public int Position
 		{

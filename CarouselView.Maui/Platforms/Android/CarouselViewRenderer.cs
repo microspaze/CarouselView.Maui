@@ -1,11 +1,12 @@
-using System.Collections.Specialized;
-using System.ComponentModel;
 using Android.Content;
 using Android.Runtime;
 using AndroidX.ViewPager.Widget;
 using CarouselView.Abstractions;
 using Com.ViewPagerIndicator;
 using Microsoft.Maui.Platform;
+using System;
+using System.Collections.Specialized;
+using System.ComponentModel;
 using View = Microsoft.Maui.Controls.View;
 
 /*
@@ -83,6 +84,15 @@ namespace CarouselView.Droid
             _control.Loaded += OnElementLoaded;
 
             // Configure the control and subscribe to event handlers
+            if (_control.ItemsSource == null && _control.ItemViewCount > 0)
+            {
+                var positions = new int[_control.ItemViewCount];
+                for (var i = 0; i < _control.ItemViewCount; i++)
+                {
+                    positions[i] = i;
+                }
+                _control.ItemsSource = positions;
+            }
             if (_control.ItemsSource != null && _control.ItemsSource is INotifyCollectionChanged)
             {
                 ((INotifyCollectionChanged)_control.ItemsSource).CollectionChanged += ItemsSource_CollectionChanged;
@@ -1182,6 +1192,7 @@ namespace CarouselView.Droid
                     }
                     else
                     {
+                        var usePositionTemplate = false;
                         var selector = Element.ItemTemplate as DataTemplateSelector;
                         if (selector != null)
                         {
@@ -1190,6 +1201,15 @@ namespace CarouselView.Droid
                         else
                         {
                             // So ItemsSource can be ViewModels
+                            if (Element.ItemPositionTemplates != null)
+                            {
+                                var positionTemplate = Element.ItemPositionTemplates.FirstOrDefault(x => x.Position == index);
+                                if (positionTemplate != null && positionTemplate.DataTemplate != null)
+                                {
+                                    formsView = (View)positionTemplate.DataTemplate.CreateContent();
+                                    usePositionTemplate = true;
+                                }
+                            }
                             if (Element.ItemTemplate != null)
                             {
                                 formsView = (View)Element.ItemTemplate.CreateContent();
@@ -1203,7 +1223,7 @@ namespace CarouselView.Droid
                             }
                         }
 
-                        formsView.BindingContext = bindingContext;
+                        formsView.BindingContext = usePositionTemplate ? Element.BindingContext : bindingContext;
                     }
                 }
 

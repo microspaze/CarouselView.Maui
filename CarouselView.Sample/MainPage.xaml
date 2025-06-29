@@ -2,6 +2,7 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:cv="clr-namespace:CarouselView.Abstractions;assembly=CarouselView.Maui"
+             xmlns:local="clr-namespace:CarouselView.Sample"
              xmlns:ios="clr-namespace:Microsoft.Maui.Controls.PlatformConfiguration.iOSSpecific;assembly=Microsoft.Maui.Controls"
              ios:Page.UseSafeArea="False"
              x:Class="CarouselView.Sample.MainPage">
@@ -41,9 +42,9 @@
                 
             <cv:CarouselViewControl x:Name="CarouselHorizontal"
                                     HeightRequest="300"
-                                    ItemsSource="{Binding MyItemsSource}"
                                     ShowArrows="False"
                                     ShowIndicators="True"
+                                    ItemViewCount="3"
                                     PositionSelectedCommand="{Binding PositionSelectedCommand}"
                                     ScrolledCommand="{Binding ScrolledCommand}"
                                     Orientation="Horizontal"
@@ -51,14 +52,32 @@
                                     AutoplayInterval="0"
                                     IsSwipeEnabled="True"
                                     SelectedItem="{Binding SelectedItem}">
-                <cv:CarouselViewControl.ItemTemplate>
-                    <DataTemplate>
-                        <Grid>
-                            <Image Source="{Binding .}" HeightRequest="300" Aspect="Fill"/>
-                            <Button HorizontalOptions="Center" VerticalOptions="Center" Clicked="Button_Clicked" Text="Click Me"/>
-                        </Grid>
-                    </DataTemplate>
-                </cv:CarouselViewControl.ItemTemplate>
+                <cv:CarouselViewControl.ItemPositionTemplates>
+                    <cv:CarouselViewPositionTemplate Position="0">
+                        <DataTemplate>
+                            <Grid>
+                                <Image Source="c1.jpg" HeightRequest="300" Aspect="Fill"/>
+                                <Button HorizontalOptions="Center" VerticalOptions="Center" Clicked="Button_Clicked" Text="Click Me"/>
+                            </Grid>
+                        </DataTemplate>
+                    </cv:CarouselViewPositionTemplate>
+                    <cv:CarouselViewPositionTemplate Position="1">
+                        <DataTemplate x:DataType="local:MainViewModel">
+                            <Grid>
+                                <Image Source="{Binding SecondImage}" HeightRequest="300" Aspect="Fill"/>
+                                <Button HorizontalOptions="Center" VerticalOptions="Center" Clicked="Button_Clicked" Text="Click Me"/>
+                            </Grid>
+                        </DataTemplate>
+                    </cv:CarouselViewPositionTemplate>
+                    <cv:CarouselViewPositionTemplate Position="2">
+                        <DataTemplate x:DataType="local:MainViewModel">
+                            <Grid>
+                                <Image Source="{Binding ThirdImage}" HeightRequest="300" Aspect="Fill"/>
+                                <Button HorizontalOptions="Center" VerticalOptions="Center" Clicked="Button_Clicked" Text="Click Me"/>
+                            </Grid>
+                        </DataTemplate>
+                    </cv:CarouselViewPositionTemplate>
+                </cv:CarouselViewControl.ItemPositionTemplates>
             </cv:CarouselViewControl>
 
         </StackLayout>

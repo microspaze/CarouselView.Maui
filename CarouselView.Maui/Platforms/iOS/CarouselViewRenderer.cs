@@ -73,6 +73,15 @@ namespace CarouselView.iOS
             containerView = new UIView();
 
             // Configure the control and subscribe to event handlers
+            if (_control.ItemsSource == null && _control.ItemViewCount > 0)
+            {
+                var positions = new int[_control.ItemViewCount];
+                for(var i = 0; i < _control.ItemViewCount; i++)
+                {
+                    positions[i] = i;
+                }
+                _control.ItemsSource = positions;
+            }
             if (_control.ItemsSource != null && _control.ItemsSource is INotifyCollectionChanged)
             {
                 ((INotifyCollectionChanged)_control.ItemsSource).CollectionChanged += ItemsSource_CollectionChanged;
@@ -1260,6 +1269,7 @@ namespace CarouselView.iOS
                 }
                 else
                 {
+                    var usePositionTemplate = false;
                     var selector = _control.ItemTemplate as DataTemplateSelector;
                     if (selector != null)
                     {
@@ -1267,9 +1277,18 @@ namespace CarouselView.iOS
                     }
                     else
                     {
-                        // So ItemsSource can be ViewModels
+                        if (_control.ItemPositionTemplates != null)
+                        {
+                            var positionTemplate = _control.ItemPositionTemplates.FirstOrDefault(x => x.Position == index);
+                            if (positionTemplate != null && positionTemplate.DataTemplate != null)
+                            {
+                                formsView = (View)positionTemplate.DataTemplate.CreateContent();
+                                usePositionTemplate = true;
+                            }
+                        }
                         if (_control.ItemTemplate != null)
                         {
+                            // So ItemsSource can be ViewModels
                             formsView = (View)_control.ItemTemplate.CreateContent();
                         }
                         else
@@ -1281,7 +1300,7 @@ namespace CarouselView.iOS
                         }
                     }
 
-                    formsView.BindingContext = bindingContext;
+                    formsView.BindingContext = usePositionTemplate ? _control.BindingContext : bindingContext;
                 }
             }
 
