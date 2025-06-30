@@ -6,6 +6,7 @@ using Microsoft.Maui.Controls.Platform;
 using Microsoft.Maui.Platform;
 using System.Collections.Specialized;
 using System.ComponentModel;
+using System.Diagnostics;
 using UIKit;
 
 /*
@@ -1288,17 +1289,20 @@ namespace CarouselView.iOS
                                 usePositionTemplate = true;
                             }
                         }
-                        if (formsView == null && _control.ItemTemplate != null)
+                        if (formsView == null)
                         {
-                            // So ItemsSource can be ViewModels
-                            formsView = (View)_control.ItemTemplate.CreateContent();
-                        }
-                        else if (formsView == null)
-                        {
-                            formsView = new Label()
+                            if (_control.ItemTemplate != null)
                             {
-                                Text = "Please provide an ItemTemplate or a DataTemplateSelector"
-                            };
+                                // So ItemsSource can be ViewModels
+                                formsView = (View)_control.ItemTemplate.CreateContent();
+                            }
+                            else
+                            {
+                                formsView = new Label()
+                                {
+                                    Text = "Please provide an ItemTemplate or a DataTemplateSelector"
+                                };
+                            }
                         }
                     }
 

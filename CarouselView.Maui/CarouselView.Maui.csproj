@@ -17,7 +17,7 @@
 		<RepositoryUrl>https://github.com/microspaze/CarouselView.Maui</RepositoryUrl>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
         <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
-		<Version>1.1.5</Version>
+		<Version>1.1.6</Version>
 		<Configurations>Debug;Release</Configurations>
 		<Platforms>AnyCPU;Device;Simulator</Platforms>
 	</PropertyGroup>

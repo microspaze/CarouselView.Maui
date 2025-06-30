@@ -7,6 +7,7 @@ using Microsoft.Maui.Platform;
 using System;
 using System.Collections.Specialized;
 using System.ComponentModel;
+using System.Diagnostics;
 using View = Microsoft.Maui.Controls.View;
 
 /*
@@ -1204,23 +1205,33 @@ namespace CarouselView.Droid
                             // So ItemsSource can be ViewModels
                             if (Element.ItemPositionTemplates is { Count: > 0 })
                             {
-                                var positionTemplate = Element.ItemPositionTemplates.FirstOrDefault(x => x.Position == position);
+                                var templatePosition = position;
+                                if (Element.InfiniteScrolling)
+                                {
+                                    var lastIndex = Source!.Count - 3;
+                                    templatePosition--;
+                                    templatePosition = templatePosition < 0 ? lastIndex : (templatePosition > lastIndex ? 0 : templatePosition);
+                                }
+                                var positionTemplate = Element.ItemPositionTemplates.FirstOrDefault(x => x.Position == templatePosition);
                                 if (positionTemplate != null && positionTemplate.Template != null)
                                 {
                                     formsView = (View)positionTemplate.Template.CreateContent();
                                     usePositionTemplate = true;
                                 }
                             }
-                            if (formsView == null && Element.ItemTemplate != null)
+                            if (formsView == null)
                             {
-                                formsView = (View)Element.ItemTemplate.CreateContent();
-                            }
-                            else if (formsView == null)
-                            {
-                                formsView = new Label()
+                                if (Element.ItemTemplate != null)
                                 {
-                                    Text = "Please provide an ItemTemplate or a DataTemplateSelector"
-                                };
+                                    formsView = (View)Element.ItemTemplate.CreateContent();
+                                }
+                                else
+                                {
+                                    formsView = new Label()
+                                    {
+                                        Text = "Please provide an ItemTemplate or a DataTemplateSelector"
+                                    };
+                                }
                             }
                         }
 

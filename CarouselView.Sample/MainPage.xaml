@@ -50,8 +50,7 @@
                                     Orientation="Horizontal"
                                     InfiniteScrolling="True"
                                     AutoplayInterval="0"
-                                    IsSwipeEnabled="True"
-                                    SelectedItem="{Binding SelectedItem}">
+                                    IsSwipeEnabled="True">
                 <cv:CarouselViewControl.ItemPositionTemplates>
                     <cv:CarouselViewPositionTemplate Position="0">
                         <DataTemplate>
